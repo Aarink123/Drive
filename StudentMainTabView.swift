@@ -37,7 +37,11 @@ struct StudentMainTabView: View {
                     Image(systemName: "house.fill")
                     Text("Dashboard")
                 }
-            
+            RoutesView()
+                .tabItem {
+                    Image(systemName: "map.fill")
+                    Text("Routes")
+                }
             // Courses Tab
             // MODIFIED: Pass the student role. Index is not needed for students.
             CoursesView(userRole: .student, selectedStudentIndex: nil)

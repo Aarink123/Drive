@@ -31,7 +31,7 @@ class AppData: ObservableObject {
                 expectedTestDate: nil,
                 metrics: DriveMetrics(
                     averageSpeed: 34.2,
-                    distanceDrove: 15.8,
+                    distanceDrove: 12.3,
                     hardBraking: 3,
                     rapidAcceleration: 2,
                     speedingInstances: 1,
