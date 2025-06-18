@@ -23,9 +23,28 @@ class AppData: ObservableObject {
             weekScore: 78,
             monthScore: 82,
             driveHistory: [
-                DriveHistory(date: "June 16, 4:30 PM", distance: 12.3, score: 85),
-                DriveHistory(date: "June 15, 5:00 PM", distance: 8.7, score: 92),
-                DriveHistory(date: "June 14, 2:15 PM", distance: 20.1, score: 78)
+                DriveHistory(
+                    date: "June 17, 7:30 PM",
+                    distance: 12.3,
+                    score: 85,
+                    performanceBreakdown: PerformanceBreakdown(control: 95, speed: 80, aware: 88, follow: 92, smooth: 75),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Left Turns", icon: "arrow.turn.up.left", grade: "A", description: "Smooth, good signal usage"),
+                        ManeuverAnalysis(name: "Right Turns", icon: "arrow.turn.up.right", grade: "B+", description: "Slightly wide on two turns"),
+                        ManeuverAnalysis(name: "Lane Changes", icon: "arrow.left.arrow.right", grade: "A-", description: "Good awareness, one missed blind spot check")
+                    ]
+                ),
+                DriveHistory(
+                    date: "June 15, 5:00 PM",
+                    distance: 8.7,
+                    score: 92,
+                    performanceBreakdown: PerformanceBreakdown(control: 98, speed: 90, aware: 95, follow: 93, smooth: 89),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Left Turns", icon: "arrow.turn.up.left", grade: "A+", description: "Excellent control and speed"),
+                        ManeuverAnalysis(name: "Right Turns", icon: "arrow.turn.up.right", grade: "A", description: "Good signal usage"),
+                        ManeuverAnalysis(name: "Parking", icon: "p.circle", grade: "A-", description: "Well-centered in the space")
+                    ]
+                )
             ]
         ),
         Kid(
@@ -48,9 +67,16 @@ class AppData: ObservableObject {
             weekScore: 88,
             monthScore: 85,
             driveHistory: [
-                DriveHistory(date: "June 16, 3:00 PM", distance: 5.4, score: 95),
-                DriveHistory(date: "June 14, 6:00 PM", distance: 11.2, score: 90),
-                DriveHistory(date: "June 13, 1:20 PM", distance: 7.8, score: 88)
+                DriveHistory(
+                    date: "June 16, 3:00 PM",
+                    distance: 5.4,
+                    score: 95,
+                    performanceBreakdown: PerformanceBreakdown(control: 94, speed: 98, aware: 93, follow: 96, smooth: 95),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Stop Signs", icon: "hand.raised", grade: "A", description: "Came to a complete stop each time"),
+                        ManeuverAnalysis(name: "Following Distance", icon: "car.2", grade: "A-", description: "Maintained good distance, slightly close once")
+                    ]
+                )
             ]
         )
     ]

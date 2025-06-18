@@ -47,10 +47,11 @@ struct ParentDashboardView1: View {
                                 onShowHistory: { showDriveHistory = true }
                             )
                             
-                            WeeklyGoalsSectionView() // Updated with more goals
+                            WeeklyGoalsSectionView()
                                 .padding(.horizontal)
                             
-                            DriveHistorySectionView() // Updated with new dates
+                            // Now passes real drive history data
+                            DriveHistorySectionView(driveHistory: currentStudent.driveHistory)
                                 .padding(.horizontal)
                         } else {
                             Text("No students added yet. Go to Settings to add a kid.")
@@ -73,10 +74,13 @@ struct ParentDashboardView1: View {
                 }
             }
             .sheet(isPresented: $showCourses) {
-                CoursesView() // Updated with more courses
+                CoursesView()
             }
             .sheet(isPresented: $showDriveHistory) {
-                DriveHistoryMasterView() // Updated with new dates
+                // Now passes real drive history data
+                if !appData.kids.isEmpty {
+                    DriveHistoryMasterView(driveHistory: appData.kids[selectedStudent].driveHistory)
+                }
             }
         }
     }
@@ -279,9 +283,6 @@ struct WeeklyGoalsSectionView: View {
                 GoalCard(title: "Complete Stops", goal: "Perform full 3-second stops at all signs", progress: 35, target: 40, color: .red)
                 GoalCard(title: "Turn Signals", goal: "Use signals 100ft before every turn", progress: 45, target: 50, color: .yellow)
                 GoalCard(title: "Lane Centering", goal: "Stay centered in the lane on straightaways", progress: 15, target: 30, color: .green)
-                GoalCard(title: "Following Distance", goal: "Maintain 3-second gap from car ahead", progress: 13, target: 25, color: .blue)
-                GoalCard(title: "Parking Precision", goal: "Center the car within parking lines", progress: 8, target: 15, color: .purple)
-                GoalCard(title: "Mirror Checks", goal: "Check mirrors every 5-8 seconds", progress: 22, target: 60, color: .pink)
             }
         }
     }
@@ -320,6 +321,9 @@ struct GoalCard: View {
 
 // UPDATED Drive History Section
 struct DriveHistorySectionView: View {
+    let driveHistory: [DriveHistory]
+    @State private var selectedDrive: DriveHistory?
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Recent Drive History")
@@ -329,10 +333,16 @@ struct DriveHistorySectionView: View {
                 .padding(.bottom, 8)
 
             VStack(spacing: 12) {
-                DriveHistoryRow(date: "June 16, 4:30 PM", distance: 12.2, score: 93)
-                DriveHistoryRow(date: "June 15, 5:00 PM", distance: 18.5, score: 87)
-                DriveHistoryRow(date: "June 14, 2:15 PM", distance: 20.7, score: 89)
+                ForEach(driveHistory.prefix(3)) { drive in
+                    Button(action: { selectedDrive = drive }) {
+                        DriveHistoryRow(date: drive.date, distance: drive.distance, score: drive.score)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
             }
+        }
+        .sheet(item: $selectedDrive) { drive in
+            DriveDetailView(drive: drive)
         }
     }
 }
@@ -414,14 +424,6 @@ struct AIDetailedRecommendationsView: View {
                                 .font(.title2).fontWeight(.bold).foregroundColor(.white)
                             InsightCard(icon: "mappin.and.ellipse", title: "Location Habits", text: "AI has noticed that most speeding instances occur on the main highway bypass. Suggest reviewing the speed limits in that specific zone.")
                             InsightCard(icon: "clock.arrow.circlepath", title: "Time-of-Day Patterns", text: "Hard braking events are more frequent during the morning commute (7-8 AM). This may be due to rushing or heavier traffic.")
-                            InsightCard(icon: "car.2.fill", title: "Following Distance", text: "The system detects tailgating patterns before rapid braking events. Practicing the '3-second rule' is highly recommended.")
-                        }.padding(.horizontal)
-
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Proactive & Preventative Tips")
-                                .font(.title2).fontWeight(.bold).foregroundColor(.white)
-                            InsightCard(icon: "windshield.front.and.wiper", title: "Weather Preparedness", text: "Rain is forecasted this week. Reduce speed by 25% on wet roads and double your following distance.")
-                            InsightCard(icon: "tirepressure", title: "Vehicle Maintenance", text: "Consistent, gradual speed changes can improve fuel economy by up to 15%. Also, check tire pressure monthly for optimal handling.")
                         }.padding(.horizontal)
                         
                         SafetyRatingCard(rating: student.metrics.safetyRating)
@@ -504,23 +506,11 @@ struct CoursesView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedCourse: Course?
 
-    // Expanded list of courses
     let courses = [
         Course(title: "Defensive Driving", description: "Anticipate and avoid hazards", duration: "2 hours", icon: "shield.checkered", color: .green),
         Course(title: "Night Driving", description: "Master driving in low light", duration: "1.5 hours", icon: "moon.stars.fill", color: .purple),
         Course(title: "Highway Skills", description: "Merging, lane changes, and more", duration: "3 hours", icon: "road.lanes", color: .blue),
-        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", duration: "1 hour", icon: "parkingsign.circle.fill", color: .orange),
-        Course(title: "Inclement Weather", description: "Driving in rain, fog, and snow", duration: "2.5 hours", icon: "cloud.rain.fill", color: .gray),
-        Course(title: "City Driving", description: "Navigate dense urban environments", duration: "3 hours", icon: "building.2.fill", color: .pink),
-        Course(title: "Eco-Driving", description: "Save fuel and reduce emissions", duration: "1 hour", icon: "leaf.arrow.circlepath", color: .green),
-        Course(title: "Emergency Maneuvers", description: "Reacting to sudden events", duration: "4 hours", icon: "exclamationmark.triangle.fill", color: .red),
-        Course(title: "Roundabout Navigation", description: "Mastering traffic circles with ease", duration: "1 hour", icon: "arrow.triangle.swap", color: .teal),
-        Course(title: "Vehicle Maintenance 101", description: "Basic checks to keep your car safe", duration: "1.5 hours", icon: "wrench.and.screwdriver.fill", color: .gray),
-        Course(title: "Advanced Turns", description: "Perfecting U-turns and three-point turns", duration: "2 hours", icon: "arrow.uturn.backward.circle", color: .indigo),
-        Course(title: "Distraction Avoidance", description: "Techniques to stay focused on the road", duration: "1 hour", icon: "iphone.slash", color: .mint),
-        Course(title: "Rural Road Safety", description: "Handling wildlife and unpaved roads", duration: "2 hours", icon: "camera.macro", color: Color(red: 0.6, green: 0.4, blue: 0.2)),
-        Course(title: "Road Trip Prep", description: "Long-distance driving strategies", duration: "2.5 hours", icon: "map.fill", color: .cyan),
-        Course(title: "Post-Accident Procedure", description: "What to do after a fender bender", duration: "1 hour", icon: "person.text.rectangle.fill", color: .red)
+        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", duration: "1 hour", icon: "parkingsign.circle.fill", color: .orange)
     ]
     
     var body: some View {
@@ -700,7 +690,10 @@ struct CourseCard: View {
 
 // UPDATED Drive History Master View
 struct DriveHistoryMasterView: View {
+    let driveHistory: [DriveHistory]
     @Environment(\.presentationMode) var presentationMode
+    @State private var selectedDrive: DriveHistory?
+    
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
 
     var body: some View {
@@ -719,18 +712,12 @@ struct DriveHistoryMasterView: View {
                         }.padding([.horizontal, .top])
                         
                         VStack(spacing: 12) {
-                             DriveHistoryRow(date: "June 16, 4:30 PM", distance: 12.2, score: 93)
-                             DriveHistoryRow(date: "June 15, 5:00 PM", distance: 18.5, score: 87)
-                             DriveHistoryRow(date: "June 14, 2:15 PM", distance: 20.7, score: 89)
-                             DriveHistoryRow(date: "June 13, 8:00 AM", distance: 19.9, score: 87)
-                             DriveHistoryRow(date: "June 12, 6:30 PM", distance: 8.7, score: 80)
-                             DriveHistoryRow(date: "June 11, 3:00 PM", distance: 16.6, score: 75)
-                             DriveHistoryRow(date: "June 10, 1:45 PM", distance: 22.2, score: 90)
-                             DriveHistoryRow(date: "June 9, 9:00 AM", distance: 5.1, score: 95)
-                             DriveHistoryRow(date: "June 8, 11:30 AM", distance: 11.4, score: 88)
-                             DriveHistoryRow(date: "June 7, 7:00 PM", distance: 14.8, score: 82)
-                             DriveHistoryRow(date: "June 6, 4:45 PM", distance: 9.3, score: 91)
-                             DriveHistoryRow(date: "June 5, 2:00 PM", distance: 17.0, score: 78)
+                            ForEach(driveHistory) { drive in
+                                Button(action: { selectedDrive = drive }) {
+                                    DriveHistoryRow(date: drive.date, distance: drive.distance, score: drive.score)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                         }.padding(.horizontal)
                     }
                 }
@@ -739,6 +726,9 @@ struct DriveHistoryMasterView: View {
                 presentationMode.wrappedValue.dismiss()
             }.foregroundColor(.white))
             .navigationBarHidden(true)
+            .sheet(item: $selectedDrive) { drive in
+                DriveDetailView(drive: drive)
+            }
         }
     }
 }

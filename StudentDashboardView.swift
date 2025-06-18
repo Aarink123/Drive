@@ -11,10 +11,7 @@ struct StudentDashboardView: View {
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
     private let secondaryBlue = Color(#colorLiteral(red: 0.1568627451, green: 0.4, blue: 0.6156862745, alpha: 1))
     
-    // This computed property finds the student's data.
-    // In a real app, you'd use a unique ID. Here, we'll find the first student.
     private var student: Kid? {
-        // The login is hardcoded to "TeenLogin", so we'll just display the first kid's data.
         appData.kids.first { $0.name == "Aarin" } ?? appData.kids.first
     }
 
@@ -35,7 +32,7 @@ struct StudentDashboardView: View {
                             
                             DrivingProgressView(
                                 drivingHours: student.metrics.totalHoursDriven,
-                                totalRequiredHours: 40.0 // State requirement for GA
+                                totalRequiredHours: 40.0
                             )
                             .padding(.horizontal)
                             
@@ -203,7 +200,6 @@ struct StudentActionButtonsView: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 16) {
-                // This now uses the ActionButton struct from ParentDashboardView1
                 ActionButton(icon: "plus.circle.fill", title: "Log Drive", color: .green, action: {})
                 ActionButton(icon: "book.fill", title: "Study Guide", color: .blue, action: {})
                 ActionButton(icon: "list.star", title: "My Stats", color: .yellow, action: {})
@@ -216,6 +212,7 @@ struct StudentActionButtonsView: View {
 
 struct RecentDrivesSectionView: View {
     let driveHistory: [DriveHistory]
+    @State private var selectedDrive: DriveHistory?
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -235,11 +232,16 @@ struct RecentDrivesSectionView: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(driveHistory) { drive in
-                        // This now uses the DriveHistoryRow struct from ParentDashboardView1
-                        DriveHistoryRow(date: drive.date, distance: drive.distance, score: drive.score)
+                        Button(action: { selectedDrive = drive }) {
+                            DriveHistoryRow(date: drive.date, distance: drive.distance, score: drive.score)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
+        }
+        .sheet(item: $selectedDrive) { drive in
+            DriveDetailView(drive: drive)
         }
     }
 }

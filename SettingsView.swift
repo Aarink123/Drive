@@ -225,11 +225,31 @@ struct SettingsView: View {
     }
 }
 
-struct DriveHistory: Identifiable {
+// MARK: - Data Models
+
+struct PerformanceBreakdown: Hashable {
+    let control: Int
+    let speed: Int
+    let aware: Int
+    let follow: Int
+    let smooth: Int
+}
+
+struct ManeuverAnalysis: Identifiable, Hashable {
+    var id = UUID()
+    let name: String
+    let icon: String
+    let grade: String
+    let description: String
+}
+
+struct DriveHistory: Identifiable, Hashable {
     let id = UUID()
     let date: String
     let distance: Double
     let score: Int
+    let performanceBreakdown: PerformanceBreakdown
+    let maneuverAnalyses: [ManeuverAnalysis]
 }
 
 struct Kid: Identifiable {
