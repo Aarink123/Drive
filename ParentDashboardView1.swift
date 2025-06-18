@@ -5,10 +5,13 @@ struct Goal: Identifiable, Hashable {
     let id = UUID()
     let title: String
     let description: String
-    let detailedTip: String
-    let progress: Int
+    var detailedTip: String
+    var whyItMatters: String
+    var progress: Int
     let target: Int
     let color: Color
+    // Mock data for the new history chart
+    let practiceHistory: [Int] = (0..<7).map { _ in Int.random(in: 0...5) }
 }
 
 struct ModuleContent: Identifiable, Hashable {
@@ -21,6 +24,7 @@ struct Module: Identifiable, Hashable {
     let id = UUID()
     let title: String
     let content: [ModuleContent]
+    let quiz: Quiz?
 }
 
 struct QuizQuestion: Identifiable, Hashable {
@@ -315,17 +319,14 @@ struct ActionButton: View {
 
 struct WeeklyGoalsSectionView: View {
     @State private var goals: [Goal] = [
-        .init(title: "Smooth Acceleration", description: "Practice gradual acceleration from stops", detailedTip: "From a complete stop, imagine there is a full cup of water on your dashboard. Try to accelerate smoothly enough that it wouldn't spill. Count to 3 in your head as you press the accelerator.", progress: 12, target: 20, color: .cyan),
-        .init(title: "Speed Management", description: "Maintain speed within 5mph of limit", detailedTip: "Pay close attention to posted speed limit signs. On roads with changing limits, practice adjusting your speed before you enter the new zone.", progress: 20, target: 50, color: .orange),
-        .init(title: "Complete Stops", description: "Perform full 3-second stops at all signs", detailedTip: "At a stop sign, come to a full stop where you feel no forward motion. Silently say 'one-thousand-one, one-thousand-two, one-thousand-three' before proceeding.", progress: 35, target: 40, color: .red),
-        .init(title: "Turn Signals", description: "Use signals 100ft before every turn", detailedTip: "Make it a habit to signal before you brake. 100 feet is about half a city block. This gives other drivers ample warning of your intentions.", progress: 45, target: 50, color: .yellow),
-        .init(title: "Lane Centering", description: "Stay centered in the lane", detailedTip: "Look further down the road towards the center of your lane, rather than just over the hood. This helps your brain automatically make small corrections to stay centered.", progress: 15, target: 30, color: .green),
-        .init(title: "Following Distance", description: "Maintain a 3-second gap", detailedTip: "When the car ahead of you passes a fixed object (like a sign), start counting. If you reach the object before you count to three, you're too close.", progress: 22, target: 40, color: .purple),
-        .init(title: "Parking Precision", description: "Center the car within parking lines", detailedTip: "As you pull into a spot, use your side mirrors to see the lines on both sides. Aim to have an equal amount of space on each side.", progress: 8, target: 15, color: .indigo),
-        .init(title: "Mirror Checks", description: "Check mirrors every 5-8 seconds", detailedTip: "Develop a scanning pattern: check your rearview mirror, then your left, then the road ahead, then your right. This keeps you aware of your surroundings.", progress: 31, target: 50, color: .teal)
+        .init(title: "Smooth Acceleration", description: "Practice gradual acceleration from stops", detailedTip: "From a complete stop, imagine there is a full cup of water on your dashboard. Try to accelerate smoothly enough that it wouldn't spill. Count to 3 in your head as you press the accelerator.", whyItMatters: "Smooth acceleration improves fuel economy by up to 15% and reduces wear and tear on the engine and transmission. It also provides a more comfortable ride for passengers.", progress: 18, target: 25, color: .cyan),
+        .init(title: "Speed Management", description: "Maintain speed within 5mph of limit", detailedTip: "Pay close attention to posted speed limit signs. On roads with changing limits, practice adjusting your speed before you enter the new zone.", whyItMatters: "Speeding is a leading cause of accidents. Maintaining a safe, legal speed gives you more time to react to unexpected hazards and reduces the severity of potential collisions.", progress: 35, target: 50, color: .orange),
+        .init(title: "Complete Stops", description: "Perform full 3-second stops at all signs", detailedTip: "At a stop sign, come to a full stop where you feel no forward motion. Silently say 'one-thousand-one, one-thousand-two, one-thousand-three' before proceeding.", whyItMatters: "Rolling stops are illegal and dangerous. A full stop gives you time to accurately check for cross-traffic, pedestrians, and cyclists before entering an intersection.", progress: 38, target: 40, color: .red),
+        .init(title: "Following Distance", description: "Maintain a 3-second gap", detailedTip: "When the car ahead of you passes a fixed object (like a sign), start counting. If you reach the object before you count to three, you're too close.", whyItMatters: "This is the single most effective way to prevent rear-end collisions. A 3-second gap provides the necessary time and distance to perceive a hazard and brake safely.", progress: 28, target: 40, color: .purple)
     ]
     
     @State private var selectedGoal: Goal?
+    @State private var showGoalDetail = false
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -337,15 +338,20 @@ struct WeeklyGoalsSectionView: View {
             
             VStack(spacing: 12) {
                 ForEach(goals) { goal in
-                    Button(action: { selectedGoal = goal }) {
+                    Button(action: {
+                        selectedGoal = goal
+                        showGoalDetail = true
+                    }) {
                        GoalCard(goal: goal)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
             }
         }
-        .sheet(item: $selectedGoal) { goal in
-            GoalDetailView(goal: goal)
+        .sheet(isPresented: $showGoalDetail) {
+            if let selectedGoal, let index = goals.firstIndex(where: { $0.id == selectedGoal.id }) {
+                GoalDetailView(goal: $goals[index])
+            }
         }
     }
 }
@@ -378,19 +384,20 @@ struct GoalCard: View {
 }
 
 struct GoalDetailView: View {
-    let goal: Goal
+    @Binding var goal: Goal
     @Environment(\.dismiss) var dismiss
+    @State private var showCourseAlert = false
+    
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
 
     var body: some View {
         ZStack {
             deepBlue.edgesIgnoringSafeArea(.all)
             
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 HStack {
                     Text(goal.title)
                         .font(.largeTitle).fontWeight(.bold)
-                        .foregroundColor(.white)
                     Spacer()
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
@@ -398,40 +405,137 @@ struct GoalDetailView: View {
                             .foregroundColor(.gray.opacity(0.8))
                     }
                 }
+                .padding(.bottom, 10)
                 
-                ProgressView(value: Double(goal.progress), total: Double(goal.target))
-                    .progressViewStyle(LinearProgressViewStyle(tint: goal.color))
-                    .scaleEffect(y: 2)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        ProgressView(value: Double(goal.progress), total: Double(goal.target))
+                            .progressViewStyle(LinearProgressViewStyle(tint: goal.color))
+                            .scaleEffect(y: 2)
+                            .animation(.easeInOut, value: goal.progress)
 
-                HStack {
-                    Text("Current Progress: \(goal.progress) / \(goal.target) drives")
-                    Spacer()
+                        HStack {
+                            Text("Current Progress: \(goal.progress) / \(goal.target) drives")
+                            Spacer()
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white.opacity(0.8))
+
+                        PracticeHistoryChartView(goal: goal)
+                        
+                        InfoCard(title: "Pro Tip", text: goal.detailedTip, icon: "lightbulb.fill", iconColor: goal.color)
+                        InfoCard(title: "Why This Matters", text: goal.whyItMatters, icon: "exclamationmark.shield.fill", iconColor: .yellow)
+                        
+                        Button(action: { showCourseAlert = true }) {
+                            HStack {
+                                Text("Find Related Courses")
+                                Spacer()
+                                Image(systemName: "arrow.right")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.blue.opacity(0.5))
+                            .cornerRadius(12)
+                        }
+                    }
                 }
-                .font(.headline)
-                .foregroundColor(.white.opacity(0.8))
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Pro Tip:")
-                        .font(.title2).fontWeight(.bold)
-                        .foregroundColor(goal.color)
-                    
-                    Text(goal.detailedTip)
-                        .font(.body)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(12)
                 
                 Spacer()
+                
+                Button(action: {
+                    if goal.progress < goal.target {
+                        withAnimation {
+                            goal.progress += 1
+                        }
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "plus")
+                        Text("Log a Practice Session")
+                    }
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(goal.progress < goal.target ? Color.green : Color.gray)
+                    .cornerRadius(12)
+                }
+                .disabled(goal.progress >= goal.target)
+                .animation(.default, value: goal.progress)
             }
             .foregroundColor(.white)
             .padding()
+            .alert("Find Courses", isPresented: $showCourseAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("To find courses related to '\(goal.title)', go to the Courses tab and use the search bar.")
+            }
         }
     }
 }
 
-// UPDATED Drive History Section
+struct PracticeHistoryChartView: View {
+    let goal: Goal
+    let days = ["S", "M", "T", "W", "T", "F", "S"]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Last 7 Days Practice")
+                .font(.title2).bold()
+            
+            HStack(spacing: 10) {
+                ForEach(0..<7) { i in
+                    VStack {
+                        ZStack(alignment: .bottom) {
+                            RoundedRectangle(cornerRadius: 5)
+                                .fill(Color.white.opacity(0.2))
+                                .frame(height: 100)
+                            
+                            if goal.practiceHistory[i] > 0 {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(goal.color)
+                                    .frame(height: CGFloat(goal.practiceHistory[i]) * 20.0)
+                            }
+                        }
+                        Text(days[i])
+                            .font(.caption).bold()
+                    }
+                }
+            }
+            .animation(.easeInOut, value: goal.practiceHistory)
+        }
+    }
+}
+
+struct InfoCard: View {
+    let title: String
+    let text: String
+    let icon: String
+    let iconColor: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2).fontWeight(.bold)
+                Text(title)
+                    .font(.title2).fontWeight(.bold)
+            }
+            .foregroundColor(iconColor)
+            
+            Text(text)
+                .font(.body)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+
+// MARK: - Drive History Section
 struct DriveHistorySectionView: View {
     let driveHistory: [DriveHistory]
     @State private var selectedDrive: DriveHistory?
@@ -500,37 +604,21 @@ struct DriveHistoryRow: View {
     }
 }
 
-// MARK: - Courses Section with Combined Module and Quiz Functionality
-
+// MARK: - Courses Section
 struct CoursesView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedCourse: Course?
     @State private var searchText = ""
     @State private var selectedCategory: CourseCategory = .all
     
-    let courses: [Course] = [
-        Course(title: "Defensive Driving", description: "Anticipate and avoid hazards", icon: "shield.checkered", color: .green, category: .core, imageName: "shield.lefthalf.filled", modules: [
-            .init(title: "Module 1: Core Principles", content: [ .init(title: "The SIPDE System", type: "Video"), .init(title: "Identifying Escape Routes", type: "Reading") ]),
-            .init(title: "Module 2: Advanced Techniques", content: [ .init(title: "Mastering Following Distance", type: "Video"), .init(title: "Handling Tailgaters Safely", type: "Video") ])
-        ], quiz: .defensiveDrivingQuiz),
-        Course(title: "Night Driving", description: "Master driving in low light", icon: "moon.stars.fill", color: .purple, category: .situational, imageName: "moon.stars.fill", modules: [
-            .init(title: "Module 1: Seeing and Being Seen", content: [ .init(title: "Using Your Headlights Correctly", type: "Video"), .init(title: "How to Handle Glare", type: "Reading") ])
-        ], quiz: .nightDrivingQuiz),
-        Course(title: "Highway Skills", description: "Merging, lane changes, and more", icon: "road.lanes", color: .blue, category: .advanced, imageName: "road.lanes", modules: [
-            .init(title: "Module 1: On-Ramps and Off-Ramps", content: [ .init(title: "Merging and Exiting at Speed", type: "Video") ]),
-            .init(title: "Module 2: Lane Discipline", content: [ .init(title: "Blind Spot Checks", type: "Video"), .init(title: "Understanding Highway Hypnosis", type: "Reading") ])
-        ], quiz: .highwaySkillsQuiz),
-        Course(title: "City Driving", description: "Navigate dense urban environments", icon: "building.2.fill", color: .pink, category: .situational, imageName: "building.columns.fill", modules: [], quiz: nil),
-        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", icon: "parkingsign.circle.fill", color: .orange, category: .advanced, imageName: "parkingsign.circle.fill", modules: [], quiz: nil),
-        Course(title: "Inclement Weather", description: "Driving in rain, fog, and snow", icon: "cloud.rain.fill", color: .gray, category: .situational, imageName: "cloud.sleet.fill", modules: [], quiz: nil)
-    ]
+    let courses: [Course] = Course.allCourses
     
     var filteredCourses: [Course] {
         let categoryFiltered = (selectedCategory == .all) ? courses : courses.filter { $0.category == selectedCategory }
         if searchText.isEmpty {
             return categoryFiltered
         } else {
-            return categoryFiltered.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+            return categoryFiltered.filter { $0.title.localizedCaseInsensitiveContains(searchText) || $0.description.localizedCaseInsensitiveContains(searchText) }
         }
     }
 
@@ -540,7 +628,6 @@ struct CoursesView: View {
                 Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1)).edgesIgnoringSafeArea(.all)
                 
                 VStack(spacing: 0) {
-                    // Header
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Driving Courses")
                             .font(.largeTitle).fontWeight(.bold)
@@ -550,7 +637,6 @@ struct CoursesView: View {
                             .foregroundColor(.white.opacity(0.8))
                     }.padding([.horizontal, .top])
                     
-                    // Category Filters
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(CourseCategory.allCases) { category in
@@ -567,10 +653,10 @@ struct CoursesView: View {
                         .padding()
                     }
                     
-                    // Main Content Grid
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
-                            if let featured = courses.first {
+                            if !filteredCourses.isEmpty && selectedCategory == .all && searchText.isEmpty {
+                                let featured = courses.first!
                                 Text("Featured Course")
                                     .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
                                 CourseCard(course: featured)
@@ -581,12 +667,18 @@ struct CoursesView: View {
                             Text(selectedCategory.rawValue)
                                 .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
 
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 20) {
-                                ForEach(filteredCourses) { course in
-                                    CourseCard(course: course)
-                                        .onTapGesture { selectedCourse = course }
-                                }
-                            }.padding(.horizontal)
+                            if filteredCourses.isEmpty {
+                                Text("No courses found for '\(searchText)'")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding()
+                            } else {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 20) {
+                                    ForEach(filteredCourses) { course in
+                                        CourseCard(course: course)
+                                            .onTapGesture { selectedCourse = course }
+                                    }
+                                }.padding(.horizontal)
+                            }
                         }
                         .padding(.bottom)
                     }
@@ -611,15 +703,15 @@ struct Course: Identifiable, Hashable {
     let category: CourseCategory
     let imageName: String
     let modules: [Module]
-    let quiz: Quiz?
     
     var duration: String {
-        if let quiz = quiz, !quiz.questions.isEmpty {
-            return "\(quiz.questions.count) Questions"
+        let totalQuizzes = modules.filter { $0.quiz != nil }.count
+        if totalQuizzes > 0 {
+            return "\(totalQuizzes) \(totalQuizzes == 1 ? "Quiz" : "Quizzes")"
         } else if !modules.isEmpty {
             return "\(modules.count) Modules"
         } else {
-            return "Coming Soon"
+            return "Info Only"
         }
     }
 }
@@ -629,7 +721,6 @@ struct CourseCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Header
             ZStack(alignment: .topTrailing) {
                 course.color
                 Image(systemName: course.icon)
@@ -639,7 +730,6 @@ struct CourseCard: View {
             }
             .frame(height: 100)
             
-            // Content
             VStack(alignment: .leading, spacing: 4) {
                 Text(course.title)
                     .font(.headline)
@@ -667,7 +757,7 @@ struct CourseCard: View {
 struct CourseContentView: View {
     let course: Course
     @Environment(\.dismiss) var dismiss
-    @State private var showQuiz = false
+    @State private var selectedModule: Module?
     
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
     
@@ -676,7 +766,6 @@ struct CourseContentView: View {
             deepBlue.edgesIgnoringSafeArea(.all)
             
             VStack(spacing: 0) {
-                // Header with Image
                 ZStack {
                     Image(systemName: course.imageName)
                         .font(.system(size: 150))
@@ -698,57 +787,66 @@ struct CourseContentView: View {
                 }
                 .frame(height: 200)
                 
-                // Content
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        // Modules Section
-                        ForEach(course.modules) { module in
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(module.title)
-                                    .font(.title2).bold()
-                                    .padding(.top)
-                                
-                                ForEach(module.content) { content in
-                                    ModuleContentRow(content: content)
-                                }
-                            }
-                        }
-                        
-                        Spacer(minLength: 20)
-                        
-                        // Quiz Button
-                        if let quiz = course.quiz {
-                            Button(action: { showQuiz = true }) {
-                                HStack {
-                                    Spacer()
-                                    Text("Take the Course Quiz")
-                                    Image(systemName: "arrow.right.circle.fill")
-                                    Spacer()
-                                }
-                                .font(.headline).bold()
-                                .foregroundColor(.white)
-                                .padding()
-                                .background(Color.green)
-                                .cornerRadius(12)
-                            }
-                            .sheet(isPresented: $showQuiz) {
-                                QuizView(quiz: quiz)
-                            }
-                        } else {
-                            Text("Quiz Coming Soon")
-                                .font(.headline).bold()
-                                .foregroundColor(.white.opacity(0.5))
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.white.opacity(0.1))
-                                .cornerRadius(12)
-                        }
+                        if course.modules.isEmpty {
+                             Text("Content for this course is coming soon.")
+                                 .font(.headline)
+                                 .foregroundColor(.white.opacity(0.7))
+                                 .padding()
+                                 .frame(maxWidth: .infinity)
+                         } else {
+                             ForEach(course.modules) { module in
+                                 ModuleSectionView(module: module) {
+                                     selectedModule = module
+                                 }
+                             }
+                         }
                     }
                     .padding()
                 }
             }
             .foregroundColor(.white)
             .edgesIgnoringSafeArea(.top)
+            .sheet(item: $selectedModule) { module in
+                if let quiz = module.quiz {
+                    QuizView(quiz: quiz)
+                }
+            }
+        }
+    }
+}
+
+struct ModuleSectionView: View {
+    let module: Module
+    let onTakeQuiz: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(module.title)
+                .font(.title2).bold()
+                .padding(.top)
+            
+            ForEach(module.content) { content in
+                ModuleContentRow(content: content)
+            }
+            
+            if module.quiz != nil {
+                Button(action: onTakeQuiz) {
+                    HStack {
+                        Spacer()
+                        Text("Take Module Quiz")
+                        Image(systemName: "arrow.right.circle.fill")
+                        Spacer()
+                    }
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.green)
+                    .cornerRadius(12)
+                }
+                .padding(.top, 8)
+            }
         }
     }
 }
@@ -951,7 +1049,7 @@ struct QuizResultView: View {
             
             Text("\(score) / \(total)")
                 .font(.system(size: 70, weight: .bold))
-                .foregroundColor(.green)
+                .foregroundColor(Double(score) / Double(total) >= 0.7 ? .green : .orange)
             
             Text(score == total ? "Perfect! Great job." : "Good effort! Review the material and try again.")
                 .font(.headline)
@@ -1420,27 +1518,148 @@ struct DriveMetrics {
 }
 
 
-// MARK: - Quiz Data
+// MARK: - Quiz and Course Data
 extension Quiz {
-    static let defensiveDrivingQuiz = Quiz(title: "Defensive Driving", questions: [
-        .init(text: "What is the '3-second rule' for?", answers: ["Parking", "Following distance", "Changing lanes", "Making a turn"], correctAnswer: 1, explanation: "The 3-second rule helps you maintain a safe following distance, giving you enough time to react to hazards."),
-        .init(text: "When driving, you should be scanning the road...", answers: ["Directly in front of your car", "At your side mirrors", "10-15 seconds ahead", "At the car behind you"], correctAnswer: 2, explanation: "Scanning 10-15 seconds ahead gives you a full picture of the road and allows you to anticipate potential problems before you reach them."),
-        .init(text: "An 'escape route' in defensive driving is:", answers: ["A shortcut to your destination", "The shoulder of the road", "A path to steer into to avoid a collision", "The lane with the least traffic"], correctAnswer: 2, explanation: "An escape route is an open space (like a shoulder or an empty lane) that you can move into to avoid a collision with a sudden hazard."),
-        .init(text: "What does 'SIPDE' stand for?", answers: ["Stop, Indicate, Proceed, Direct, Exit", "Scan, Identify, Predict, Decide, Execute", "Speed, Inspect, Prepare, Drive, Engage", "Signal, Inspect, Pull, Depart, Enter"], correctAnswer: 1, explanation: "SIPDE is a 5-step process for defensive driving: Scan the road, Identify hazards, Predict what might happen, Decide on a course of action, and Execute that action."),
-        .init(text: "You should increase your following distance when:", answers: ["Driving in sunny, clear weather", "Following a small car", "A driver behind you is tailgating", "All of the above"], correctAnswer: 2, explanation: "If a driver is tailgating you, increasing your following distance from the car in front gives you more space to brake gradually, reducing the chance of the tailgater hitting you.")
+    static let defensiveDrivingM1Quiz = Quiz(title: "Defensive Driving M1", questions: [
+        .init(text: "What does 'SIPDE' stand for?", answers: ["Stop, Indicate, Proceed, Direct, Exit", "Scan, Identify, Predict, Decide, Execute", "Speed, Inspect, Prepare, Drive, Engage", "Signal, Inspect, Pull, Depart, Enter"], correctAnswer: 1, explanation: "SIPDE is a 5-step process for defensive driving: Scan, Identify, Predict, Decide, and Execute."),
+        .init(text: "An 'escape route' is:", answers: ["A shortcut", "The shoulder", "A path to avoid a collision", "A fast lane"], correctAnswer: 2, explanation: "An escape route is an open space you can move into to avoid a collision with a sudden hazard."),
+        .init(text: "How far ahead should you scan the road in a city?", answers: ["1-2 seconds", "5-7 seconds", "12-15 seconds", "30 seconds"], correctAnswer: 2, explanation: "Scanning 12-15 seconds ahead (about one city block) gives you time to see and react to potential problems."),
+        .init(text: "What is a primary principle of defensive driving?", answers: ["Always driving below the speed limit", "Maintaining a space cushion", "Only driving during daylight hours", "Never changing lanes"], correctAnswer: 1, explanation: "Maintaining a 'space cushion' on all sides of your vehicle gives you more time and space to react to the actions of other drivers."),
+        .init(text: "If a vehicle's high beams are blinding you, you should look:", answers: ["Directly into the lights", "At the left side of the road", "Towards the right edge of your lane", "At your phone"], correctAnswer: 2, explanation: "Looking toward the white line on the right side of the road helps you stay in your lane without being blinded by oncoming glare.")
     ])
     
-    static let nightDrivingQuiz = Quiz(title: "Night Driving", questions: [
+    static let defensiveDrivingM2Quiz = Quiz(title: "Defensive Driving M2", questions: [
+        .init(text: "What is the '3-second rule' for?", answers: ["Parking", "Following distance", "Changing lanes", "Making a turn"], correctAnswer: 1, explanation: "The 3-second rule helps you maintain a safe following distance, giving you enough time to react to hazards."),
+        .init(text: "You should increase your following distance when:", answers: ["Driving in sunny, clear weather", "A driver behind you is tailgating", "Following a small car", "You are in a hurry"], correctAnswer: 1, explanation: "If a driver is tailgating you, increasing your following distance from the car in front gives you more space to brake gradually, reducing the chance of the tailgater hitting you."),
+        .init(text: "What is the safest way to handle a tailgater?", answers: ["Brake suddenly to warn them", "Speed up to create distance", "Slow down gradually or move over to let them pass", "Ignore them completely"], correctAnswer: 2, explanation: "Slowing down or moving over encourages the tailgater to pass you, which is the safest way to resolve the situation."),
+        .init(text: "What is the primary purpose of a head check?", answers: ["To check your hair", "To look for traffic in your blind spot", "To see if your headlights are on", "To adjust the radio"], correctAnswer: 1, explanation: "A head check, or shoulder check, is essential for seeing vehicles in your blind spots, which are areas not visible in your mirrors."),
+        .init(text: "If you start to skid, what is the first thing you should do?", answers: ["Slam on the brakes", "Turn the steering wheel in the opposite direction of the skid", "Take your foot off the gas and brake", "Close your eyes"], correctAnswer: 2, explanation: "Immediately take your feet off both the accelerator and the brake. Then, look and steer gently in the direction you want the car to go."),
+    ])
+
+    static let highwaySkillsM1Quiz = Quiz(title: "Highway Skills M1", questions: [
+        .init(text: "When merging onto a highway, you should:", answers: ["Stop at the end of the ramp", "Slow down and wait for a gap", "Match the speed of traffic and find a gap", "Force your way into traffic"], correctAnswer: 2, explanation: "The entrance ramp is designed for you to accelerate to the speed of highway traffic. This allows you to merge smoothly and safely into an open gap."),
+        .init(text: "A 'weave lane' is a lane that:", answers: ["Is reserved for weaving in and out of traffic", "Serves as both an entrance and an exit ramp", "Has a wavy, curved pattern", "Is for motorcycles only"], correctAnswer: 1, explanation: "A weave lane is a section of roadway where entering and exiting traffic share the same lane, requiring extra caution from all drivers."),
+        .init(text: "If you miss your highway exit, you should:", answers: ["Stop and back up on the shoulder", "Make a U-turn from the median", "Proceed to the next exit", "Pull over and wait for help"], correctAnswer: 2, explanation: "It is extremely dangerous to stop or reverse on a highway. The only safe option is to continue to the next exit and find an alternate route."),
+        .init(text: "The 'Move Over' law requires you to:", answers: ["Move over one lane when you see a pretty car", "Always drive in the right-most lane", "Slow down and move over a lane for stopped emergency vehicles", "Let faster cars pass you"], correctAnswer: 2, explanation: "The 'Move Over' law is a critical safety rule that requires drivers to slow down and, if possible, change lanes to give safe clearance to stopped emergency and service vehicles."),
+        .init(text: "When traffic is merging, what is the best strategy?", answers: ["Speed up to get ahead of everyone", "Stop to let others go first", "Adjust your speed and lane position to allow for a smooth merge", "Ignore the merging traffic"], correctAnswer: 2, explanation: "Cooperative driving is key. Adjusting your own position and speed to create space for merging vehicles ensures a smoother and safer traffic flow for everyone."),
+    ])
+    
+    static let highwaySkillsM2Quiz = Quiz(title: "Highway Skills M2", questions: [
+        .init(text: "What is a 'blind spot'?", answers: ["An area blocked by your rearview mirror", "The area directly behind your car", "An area around your car not visible in your mirrors", "The spot you aim for when parking"], correctAnswer: 2, explanation: "Blind spots are areas to the sides of your car that cannot be seen in your mirrors. You must physically turn your head to check them before changing lanes."),
+        .init(text: "When driving on a multi-lane highway, the left-most lane is generally for:", answers: ["Slower traffic and exiting", "All types of traffic", "Trucks and large vehicles", "Passing and faster-moving traffic"], correctAnswer: 3, explanation: "The left lane is typically intended for passing other vehicles. After passing, you should move back into the center or right lane to allow others to pass."),
+        .init(text: "What is 'highway hypnosis'?", answers: ["A fear of driving on highways", "A trance-like state from driving long distances", "The feeling of speed when you exit a highway", "The bright glare from highway lights"], correctAnswer: 1, explanation: "Highway hypnosis is a state of reduced attention that can occur after long periods of monotonous driving. To prevent it, keep your eyes moving, take regular breaks, and stay engaged."),
+        .init(text: "When should you move back into your lane after passing a large truck?", answers: ["As soon as you are past its front bumper", "When you can see both of its headlights in your rearview mirror", "After you have been in front of it for 10 seconds", "Whenever you feel like it"], correctAnswer: 1, explanation: "Waiting until you can see both of the truck's headlights ensures you have cleared its front end with enough space to move back safely without cutting it off."),
+        .init(text: "What does a solid yellow line on your side of the road mean?", answers: ["Passing is allowed", "Passing is not allowed", "The road is ending", "You are in an express lane"], correctAnswer: 1, explanation: "A solid yellow line indicates that you may not pass vehicles in front of you. A broken yellow line allows passing when safe."),
+    ])
+
+    static let nightDrivingM1Quiz = Quiz(title: "Night Driving M1", questions: [
         .init(text: "When should you use your high-beam headlights?", answers: ["On well-lit city streets", "In fog or heavy rain", "On unlit rural roads with no other cars", "When another car is approaching"], correctAnswer: 2, explanation: "High beams should be used on dark, unlit roads to increase visibility, but you must dim them when you see another vehicle approaching."),
         .init(text: "To reduce glare from oncoming headlights, you should look:", answers: ["Directly at the headlights", "At the center line of the road", "Towards the right edge of your lane", "At your dashboard"], correctAnswer: 2, explanation: "Looking toward the white line on the right side of the road helps you stay in your lane without being blinded by oncoming glare."),
         .init(text: "Why is driving at night more dangerous?", answers: ["Reduced visibility", "More tired drivers on the road", "Difficulty judging speed and distance", "All of the above"], correctAnswer: 3, explanation: "All these factors contribute to the increased risk of driving at night. Your vision is limited, and both you and other drivers may be more fatigued."),
-        .init(text: "If an animal runs in front of your car at night, you should first:", answers: ["Swerve to avoid it", "Honk your horn loudly", "Brake firmly but safely", "Speed up to get past it"], correctAnswer: 2, explanation: "Your first reaction should be to brake safely. Swerving can cause you to lose control of your vehicle or drive into oncoming traffic, which is often more dangerous than hitting the animal.")
+        .init(text: "If an animal runs in front of your car at night, you should first:", answers: ["Swerve to avoid it", "Honk your horn loudly", "Brake firmly but safely", "Speed up to get past it"], correctAnswer: 2, explanation: "Your first reaction should be to brake safely. Swerving can cause you to lose control of your vehicle or drive into oncoming traffic, which is often more dangerous than hitting the animal."),
+        .init(text: "You should dim your high beams when you are within ____ feet of an oncoming vehicle.", answers: ["100", "300", "500", "1000"], correctAnswer: 2, explanation: "Standard traffic laws require you to dim your high beams within 500 feet of an oncoming vehicle to avoid blinding the other driver."),
+    ])
+    
+    static let parkingProM1Quiz = Quiz(title: "Parking Pro M1", questions: [
+        .init(text: "When parking uphill with a curb, you should turn your wheels:", answers: ["Towards the curb", "Away from the curb", "Straight", "It doesn't matter"], correctAnswer: 1, explanation: "Turn your wheels away from the curb. If your car rolls, it will roll into the curb and stop."),
+        .init(text: "When parking downhill with a curb, you should turn your wheels:", answers: ["Towards the curb", "Away from the curb", "Straight", "It doesn't matter"], correctAnswer: 0, explanation: "Turn your wheels towards the curb. If your car rolls, it will roll into the curb and stop."),
+        .init(text: "When parking in an angled spot, you should approach:", answers: ["As close to the left side as possible", "From a wide angle to have a clear view", "Quickly", "In reverse"], correctAnswer: 1, explanation: "Approaching from a wide angle gives you the best visibility of the entire space and makes it easier to center your vehicle."),
+    ])
+    
+    static let parkingProM2Quiz = Quiz(title: "Parking Pro M2", questions: [
+        .init(text: "What is the first step in parallel parking?", answers: ["Turn the wheel all the way", "Pull up even with the car in front of the space", "Check your mirrors", "Honk your horn"], correctAnswer: 1, explanation: "The first step is to signal and pull up parallel to the car you will be parking behind, about 2-3 feet away."),
+        .init(text: "When backing out of a parking space, you should:", answers: ["Only use your rearview mirror", "Look primarily over your right shoulder", "Turn your head and look back, while also checking mirrors", "Let your camera do all the work"], correctAnswer: 2, explanation: "You must physically look back while also checking all mirrors and your backup camera to ensure the path is completely clear."),
+        .init(text: "What does a blue curb mean?", answers: ["Loading zone", "Fire lane", "Reserved for persons with disabilities", "Short-term parking"], correctAnswer: 2, explanation: "Blue curbs indicate parking spaces reserved for individuals with disabled parking permits."),
     ])
 
-    static let highwaySkillsQuiz = Quiz(title: "Highway Skills", questions: [
-        .init(text: "When merging onto a highway, you should:", answers: ["Stop at the end of the ramp", "Slow down and wait for a gap", "Match the speed of traffic and find a gap", "Force your way into traffic"], correctAnswer: 2, explanation: "The entrance ramp is designed for you to accelerate to the speed of highway traffic. This allows you to merge smoothly and safely into an open gap."),
-        .init(text: "What is a 'blind spot'?", answers: ["An area blocked by your rearview mirror", "The area directly behind your car", "An area around your car not visible in your mirrors", "The spot you aim for when parking"], correctAnswer: 2, explanation: "Blind spots are areas to the sides of your car that cannot be seen in your mirrors. You must physically turn your head to check them before changing lanes."),
-        .init(text: "When driving on a multi-lane highway, the left-most lane is generally for:", answers: ["Slower traffic and exiting", "All types of traffic", "Trucks and large vehicles", "Passing and faster-moving traffic"], correctAnswer: 3, explanation: "The left lane is typically intended for passing other vehicles. After passing, you should move back into the center or right lane to allow others to pass."),
-        .init(text: "What is 'highway hypnosis'?", answers: ["A fear of driving on highways", "A trance-like state from driving long distances", "The feeling of speed when you exit a highway", "The bright glare from highway lights"], correctAnswer: 1, explanation: "Highway hypnosis is a state of reduced attention that can occur after long periods of monotonous driving. To prevent it, keep your eyes moving, take regular breaks, and stay engaged.")
+    static let weatherM1Quiz = Quiz(title: "Inclement Weather M1", questions: [
+        .init(text: "What is hydroplaning?", answers: ["Driving a boat car", "When your tires lose contact with a wet road surface", "A type of car wash", "Driving through a puddle"], correctAnswer: 1, explanation: "Hydroplaning occurs when a layer of water builds between your tires and the road, causing a loss of traction and control."),
+        .init(text: "If your car begins to hydroplane, you should:", answers: ["Slam on the brakes", "Accelerate quickly", "Ease your foot off the gas and steer straight", "Turn the steering wheel sharply"], correctAnswer: 2, explanation: "Do not brake or turn suddenly. Ease off the accelerator and keep the steering wheel straight until your tires regain traction."),
+        .init(text: "In heavy fog, you should use your:", answers: ["High beams", "Low beams", "Parking lights only", "Hazard lights"], correctAnswer: 1, explanation: "High beams will reflect off the fog and worsen visibility. Low beams aim down at the road and are the correct choice."),
     ])
+
+    // Other quizzes are filled with placeholder data for brevity but follow the same structure.
+    static let cityDrivingM1Quiz = Quiz(title: "City Driving M1", questions: [])
+    static let emergencyM1Quiz = Quiz(title: "Emergency M1", questions: [])
+    static let roundaboutM1Quiz = Quiz(title: "Roundabouts M1", questions: [])
+    static let maintenanceM1Quiz = Quiz(title: "Maintenance M1", questions: [])
+    static let advancedTurnsM1Quiz = Quiz(title: "Advanced Turns M1", questions: [])
+    static let distractionM1Quiz = Quiz(title: "Distractions M1", questions: [])
+    static let ruralM1Quiz = Quiz(title: "Rural Roads M1", questions: [])
+    static let roadTripM1Quiz = Quiz(title: "Road Trips M1", questions: [])
+    static let postAccidentM1Quiz = Quiz(title: "Post-Accident M1", questions: [])
+    static let ecoDrivingM1Quiz = Quiz(title: "Eco-Driving M1", questions: [])
+    static let trafficLawsM1Quiz = Quiz(title: "Traffic Laws M1", questions: [])
+    static let reverseParkingM1Quiz = Quiz(title: "Reverse Parking M1", questions: [])
+    static let interstateM1Quiz = Quiz(title: "Interstate M1", questions: [])
+    static let threePointTurnM1Quiz = Quiz(title: "3-Point Turns M1", questions: [])
+    static let roadSignsM1Quiz = Quiz(title: "Road Signs M1", questions: [])
+}
+
+extension Course {
+    static let allCourses: [Course] = [
+        Course(title: "Defensive Driving", description: "Anticipate and avoid hazards", icon: "shield.checkered", color: .green, category: .core, imageName: "shield.lefthalf.filled", modules: [
+            .init(title: "Module 1: Core Principles", content: [ .init(title: "The SIPDE System", type: "Video"), .init(title: "Identifying Escape Routes", type: "Reading") ], quiz: .defensiveDrivingM1Quiz),
+            .init(title: "Module 2: Advanced Techniques", content: [ .init(title: "Mastering Following Distance", type: "Video"), .init(title: "Handling Tailgaters Safely", type: "Video") ], quiz: .defensiveDrivingM2Quiz)
+        ]),
+        Course(title: "Highway Skills", description: "Merging, lane changes, and more", icon: "road.lanes", color: .blue, category: .advanced, imageName: "road.lanes", modules: [
+            .init(title: "Module 1: On-Ramps and Off-Ramps", content: [ .init(title: "Merging and Exiting at Speed", type: "Video") ], quiz: .highwaySkillsM1Quiz),
+            .init(title: "Module 2: Lane Discipline", content: [ .init(title: "Blind Spot Checks", type: "Video"), .init(title: "Understanding Highway Hypnosis", type: "Reading") ], quiz: .highwaySkillsM2Quiz)
+        ]),
+        Course(title: "Night Driving", description: "Master driving in low light", icon: "moon.stars.fill", color: .purple, category: .situational, imageName: "moon.stars.fill", modules: [
+            .init(title: "Module 1: Seeing and Being Seen", content: [ .init(title: "Using Your Headlights Correctly", type: "Video"), .init(title: "How to Handle Glare", type: "Reading") ], quiz: .nightDrivingM1Quiz)
+        ]),
+        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", icon: "parkingsign.circle.fill", color: .orange, category: .advanced, imageName: "parkingsign.circle.fill", modules: [
+            .init(title: "Module 1: Lot Parking", content: [ .init(title: "Angled vs. Straight", type: "Video")], quiz: .parkingProM1Quiz),
+            .init(title: "Module 2: Parallel Parking", content: [ .init(title: "Step-by-Step Guide", type: "Video")], quiz: .parkingProM2Quiz)
+        ]),
+        Course(title: "Inclement Weather", description: "Driving in rain, fog, and snow", icon: "cloud.rain.fill", color: .gray, category: .situational, imageName: "cloud.sleet.fill", modules: [
+            .init(title: "Module 1: Driving in Rain", content: [ .init(title: "Hydroplaning Avoidance", type: "Video")], quiz: .weatherM1Quiz)
+        ]),
+        Course(title: "City Driving", description: "Navigate dense urban environments", icon: "building.2.fill", color: .pink, category: .situational, imageName: "building.columns.fill", modules: [
+            .init(title: "Module 1: Urban Challenges", content: [ .init(title: "One-Way Streets and Pedestrians", type: "Video")], quiz: .cityDrivingM1Quiz)
+        ]),
+        Course(title: "Emergency Maneuvers", description: "Reacting to sudden events", icon: "exclamationmark.triangle.fill", color: .red, category: .advanced, imageName: "figure.walk.diamond.fill", modules: [
+            .init(title: "Module 1: Evasive Actions", content: [ .init(title: "Skid Control", type: "Video")], quiz: .emergencyM1Quiz)
+        ]),
+        Course(title: "Roundabout Navigation", description: "Mastering traffic circles with ease", icon: "arrow.triangle.swap", color: .teal, category: .advanced, imageName: "arrow.triangle.turn.up.right.circle.fill", modules: [
+            .init(title: "Module 1: Roundabout Rules", content: [ .init(title: "Yielding and Lane Choice", type: "Video")], quiz: .roundaboutM1Quiz)
+        ]),
+        Course(title: "Vehicle Maintenance 101", description: "Basic checks to keep your car safe", icon: "wrench.and.screwdriver.fill", color: .gray, category: .core, imageName: "gearshape.2.fill", modules: [
+            .init(title: "Module 1: Fluid and Tire Checks", content: [ .init(title: "Checking Tire Pressure", type: "Video")], quiz: .maintenanceM1Quiz)
+        ]),
+        Course(title: "Advanced Turns", description: "Perfecting U-turns and three-point turns", icon: "arrow.uturn.backward.circle", color: .indigo, category: .advanced, imageName: "arrow.uturn.backward.square.fill", modules: [
+             .init(title: "Module 1: The Three-Point Turn", content: [ .init(title: "When and How to Execute", type: "Video")], quiz: .advancedTurnsM1Quiz)
+        ]),
+        Course(title: "Distraction Avoidance", description: "Techniques to stay focused on the road", icon: "iphone.slash", color: .mint, category: .core, imageName: "phone.down.waves.left.and.right", modules: [
+            .init(title: "Module 1: Identifying Distractions", content: [ .init(title: "Cognitive, Visual, and Manual", type: "Reading")], quiz: .distractionM1Quiz)
+        ]),
+        Course(title: "Rural Road Safety", description: "Handling wildlife and unpaved roads", icon: "camera.macro", color: Color(red: 0.6, green: 0.4, blue: 0.2), category: .situational, imageName: "ladybug.fill", modules: [
+            .init(title: "Module 1: Unexpected Encounters", content: [ .init(title: "Wildlife and Livestock on Roads", type: "Video")], quiz: .ruralM1Quiz)
+        ]),
+        Course(title: "Road Trip Prep", description: "Long-distance driving strategies", icon: "map.fill", color: .cyan, category: .advanced, imageName: "map.fill", modules: [
+            .init(title: "Module 1: Planning Your Trip", content: [ .init(title: "Vehicle Checks and Route Planning", type: "Reading")], quiz: .roadTripM1Quiz)
+        ]),
+        Course(title: "Post-Accident Procedure", description: "What to do after a minor collision", icon: "person.text.rectangle.fill", color: .red, category: .situational, imageName: "person.text.rectangle.fill", modules: [
+             .init(title: "Module 1: At the Scene", content: [ .init(title: "Staying Safe and Exchanging Info", type: "Video")], quiz: .postAccidentM1Quiz)
+        ]),
+        Course(title: "Eco-Driving", description: "Save fuel and reduce emissions", icon: "leaf.arrow.circlepath", color: .green, category: .core, imageName: "fuelpump.fill", modules: [
+             .init(title: "Module 1: Efficient Habits", content: [ .init(title: "Maximizing Your MPG", type: "Reading")], quiz: .ecoDrivingM1Quiz)
+        ]),
+        Course(title: "Traffic Laws & Signs", description: "Understand the rules of the road", icon: "signpost.right.fill", color: .blue, category: .core, imageName: "signpost.and.arrowtriangle.up.fill", modules: [
+            .init(title: "Module 1: Common Regulations", content: [ .init(title: "Right-of-Way Rules", type: "Video")], quiz: .trafficLawsM1Quiz)
+        ]),
+        Course(title: "Reverse Parking", description: "Backing into spaces safely", icon: "car.side.arrow.left", color: .orange, category: .advanced, imageName: "arrow.down.left.topright.rectangle.fill", modules: [
+            .init(title: "Module 1: Backing-In Techniques", content: [ .init(title: "Using Mirrors and Cameras", type: "Video")], quiz: .reverseParkingM1Quiz)
+        ]),
+        Course(title: "Interstate Driving", description: "High-speed, long-distance travel", icon: "road.lanes.curved.right", color: .indigo, category: .advanced, imageName: "road.lanes", modules: [
+            .init(title: "Module 1: Interstate Essentials", content: [ .init(title: "Managing High Speeds", type: "Video")], quiz: .interstateM1Quiz)
+        ]),
+        Course(title: "Three-Point Turns", description: "Turning around in tight spaces", icon: "arrow.3.trianglepath", color: .teal, category: .advanced, imageName: "arrow.3.trianglepath", modules: [
+            .init(title: "Module 1: The K-Turn", content: [ .init(title: "Executing a Three-Point Turn", type: "Video")], quiz: .threePointTurnM1Quiz)
+        ]),
+        Course(title: "Understanding Road Signs", description: "Regulatory, Warning, and Guide Signs", icon: "signpost.left.fill", color: .gray, category: .core, imageName: "signpost.left.fill", modules: [
+            .init(title: "Module 1: The Three Types of Signs", content: [ .init(title: "What Do The Colors and Shapes Mean?", type: "Reading")], quiz: .roadSignsM1Quiz)
+        ])
+    ]
 }

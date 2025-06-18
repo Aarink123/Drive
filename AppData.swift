@@ -10,14 +10,14 @@ class AppData: ObservableObject {
             state: "Georgia",
             expectedTestDate: nil,
             metrics: DriveMetrics(
-                averageSpeed: 28.5,
-                distanceDrove: 12.3,
+                averageSpeed: 34.2,
+                distanceDrove: 15.8,
                 hardBraking: 3,
                 rapidAcceleration: 2,
                 speedingInstances: 1,
                 safetyRating: .moderate,
-                driveDuration: 45,
-                totalHoursDriven: 25.5
+                driveDuration: 35,
+                totalHoursDriven: 28.5
             ),
             recentDriveScore: 85,
             weekScore: 78,
@@ -127,27 +127,37 @@ class AppData: ObservableObject {
             state: "Georgia",
             expectedTestDate: nil,
             metrics: DriveMetrics(
-                averageSpeed: 25.2,
-                distanceDrove: 8.7,
-                hardBraking: 1,
-                rapidAcceleration: 0,
+                averageSpeed: 29.8,
+                distanceDrove: 11.2,
+                hardBraking: 0,
+                rapidAcceleration: 1,
                 speedingInstances: 0,
                 safetyRating: .safe,
-                driveDuration: 32,
-                totalHoursDriven: 35.2
+                driveDuration: 25,
+                totalHoursDriven: 41.5
             ),
-            recentDriveScore: 92,
-            weekScore: 88,
-            monthScore: 85,
+            recentDriveScore: 96,
+            weekScore: 94,
+            monthScore: 92,
             driveHistory: [
+                DriveHistory(
+                    date: "June 17, 4:00 PM",
+                    distance: 11.2,
+                    score: 96,
+                    performanceBreakdown: PerformanceBreakdown(control: 98, speed: 95, aware: 97, follow: 96, smooth: 95),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Stop Signs", icon: "hand.raised", grade: "A+", description: "Perfect 3-second stops at every sign."),
+                        ManeuverAnalysis(name: "Awareness", icon: "eye", grade: "A", description: "Consistently scanned mirrors and blind spots.")
+                    ]
+                ),
                 DriveHistory(
                     date: "June 16, 3:00 PM",
                     distance: 5.4,
                     score: 95,
                     performanceBreakdown: PerformanceBreakdown(control: 94, speed: 98, aware: 93, follow: 96, smooth: 95),
                     maneuverAnalyses: [
-                        ManeuverAnalysis(name: "Stop Signs", icon: "hand.raised", grade: "A", description: "Came to a complete stop each time"),
-                        ManeuverAnalysis(name: "Following Distance", icon: "car.2", grade: "A-", description: "Maintained good distance, slightly close once")
+                        ManeuverAnalysis(name: "Speed Control", icon: "speedometer", grade: "A", description: "Maintained consistent speed on all roads."),
+                        ManeuverAnalysis(name: "Following Distance", icon: "car.2", grade: "A", description: "Excellent following distance at all times.")
                     ]
                 ),
                 DriveHistory(
@@ -189,26 +199,26 @@ class AppData: ObservableObject {
                 DriveHistory(
                     date: "June 9, 2:30 PM",
                     distance: 25.3,
-                    score: 86,
-                    performanceBreakdown: PerformanceBreakdown(control: 88, speed: 82, aware: 87, follow: 89, smooth: 84),
+                    score: 92,
+                    performanceBreakdown: PerformanceBreakdown(control: 94, speed: 90, aware: 93, follow: 91, smooth: 92),
                     maneuverAnalyses: [
-                        ManeuverAnalysis(name: "Highway Driving", icon: "road.lanes", grade: "B", description: "Speed fluctuated slightly, otherwise safe.")
+                        ManeuverAnalysis(name: "Highway Driving", icon: "road.lanes", grade: "A-", description: "Excellent lane discipline and speed control.")
                     ]
                 ),
                 DriveHistory(
                     date: "June 7, 6:45 PM",
                     distance: 4.8,
-                    score: 96,
-                    performanceBreakdown: PerformanceBreakdown(control: 98, speed: 95, aware: 97, follow: 96, smooth: 97),
+                    score: 98,
+                    performanceBreakdown: PerformanceBreakdown(control: 99, speed: 97, aware: 98, follow: 98, smooth: 99),
                     maneuverAnalyses: [
-                        ManeuverAnalysis(name: "All-Way Stop", icon: "person.3", grade: "A+", description: "Correctly yielded right-of-way.")
+                        ManeuverAnalysis(name: "All-Way Stop", icon: "person.3", grade: "A+", description: "Perfectly yielded right-of-way.")
                     ]
                 ),
                 DriveHistory(
                     date: "June 6, 8:00 PM",
                     distance: 12.1,
-                    score: 89,
-                    performanceBreakdown: PerformanceBreakdown(control: 90, speed: 88, aware: 91, follow: 90, smooth: 87),
+                    score: 93,
+                    performanceBreakdown: PerformanceBreakdown(control: 94, speed: 92, aware: 95, follow: 91, smooth: 93),
                     maneuverAnalyses: [
                         ManeuverAnalysis(name: "Night Driving", icon: "moon.stars", grade: "A-", description: "Handled glare well, confident maneuvers.")
                     ]
@@ -216,8 +226,8 @@ class AppData: ObservableObject {
                  DriveHistory(
                     date: "June 4, 3:00 PM",
                     distance: 10.2,
-                    score: 93,
-                    performanceBreakdown: PerformanceBreakdown(control: 94, speed: 91, aware: 95, follow: 94, smooth: 92),
+                    score: 94,
+                    performanceBreakdown: PerformanceBreakdown(control: 95, speed: 93, aware: 95, follow: 94, smooth: 92),
                     maneuverAnalyses: [
                         ManeuverAnalysis(name: "Right Turns", icon: "arrow.turn.up.right", grade: "A", description: "Good turning radius and speed.")
                     ]
@@ -225,10 +235,10 @@ class AppData: ObservableObject {
                 DriveHistory(
                     date: "June 2, 9:00 AM",
                     distance: 19.8,
-                    score: 87,
-                    performanceBreakdown: PerformanceBreakdown(control: 89, speed: 85, aware: 88, follow: 86, smooth: 88),
+                    score: 91,
+                    performanceBreakdown: PerformanceBreakdown(control: 93, speed: 90, aware: 92, follow: 90, smooth: 89),
                     maneuverAnalyses: [
-                        ManeuverAnalysis(name: "Lane Keeping", icon: "arrow.up.and.down", grade: "B+", description: "Mostly centered, drifted slightly on curves.")
+                        ManeuverAnalysis(name: "Lane Keeping", icon: "arrow.up.and.down", grade: "A-", description: "Consistently centered in lane.")
                     ]
                 )
             ]

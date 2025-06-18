@@ -66,7 +66,7 @@ struct MapsView: View {
                                     
                                     Text(students[selectedStudent].name)
                                         .fontWeight(.semibold)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.black)
                                     
                                     Image(systemName: "chevron.down")
                                         .font(.caption)
@@ -259,7 +259,7 @@ struct MapsView: View {
         
         // Add current user as the primary student
         let currentUser = StudentLocation(
-            name: "Me",
+            name: "Aarin",
             coordinate: locationManager.currentLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 33.7490, longitude: -84.3880),
             isActive: true,
             lastUpdate: Date(),

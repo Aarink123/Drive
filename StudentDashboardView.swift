@@ -5,9 +5,7 @@ struct StudentDashboardView: View {
     let username: String
     
     @Environment(\.presentationMode) var presentationMode
-    @State private var showSignOutAlert = false
     
-    // Theming colors from parent dashboard
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
     private let secondaryBlue = Color(#colorLiteral(red: 0.1568627451, green: 0.4, blue: 0.6156862745, alpha: 1))
     
@@ -24,7 +22,7 @@ struct StudentDashboardView: View {
                 if let student = student {
                     ScrollView {
                         VStack(spacing: 24) {
-                            StudentHeaderView(username: student.name, showSignOutAlert: $showSignOutAlert)
+                            StudentHeaderView(username: student.name)
                                 .padding(.horizontal)
 
                             StudentScoreCardView(student: student)
@@ -35,10 +33,11 @@ struct StudentDashboardView: View {
                                 totalRequiredHours: 40.0
                             )
                             .padding(.horizontal)
+                                                        
+                            WeeklyGoalsSectionView()
+                                .padding(.horizontal)
                             
-                            StudentActionButtonsView()
-                            
-                            RecentDrivesSectionView(driveHistory: student.driveHistory)
+                            StudentRecentDrivesView(driveHistory: student.driveHistory)
                                 .padding(.horizontal)
                             
                         }
@@ -54,14 +53,6 @@ struct StudentDashboardView: View {
                 }
             }
             .navigationBarHidden(true)
-            .alert("Sign Out", isPresented: $showSignOutAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sign Out", role: .destructive) {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            } message: {
-                Text("Are you sure you want to sign out?")
-            }
         }
     }
 }
@@ -71,7 +62,6 @@ struct StudentDashboardView: View {
 
 struct StudentHeaderView: View {
     let username: String
-    @Binding var showSignOutAlert: Bool
     
     var body: some View {
         HStack {
@@ -86,16 +76,6 @@ struct StudentHeaderView: View {
                     .foregroundColor(.white)
             }
             Spacer()
-            Button(action: {
-                showSignOutAlert = true
-            }) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .padding(8)
-                    .background(Color.white.opacity(0.1))
-                    .clipShape(Circle())
-            }
         }
     }
 }
@@ -196,27 +176,13 @@ struct DrivingProgressView: View {
     }
 }
 
-struct StudentActionButtonsView: View {
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ActionButton(icon: "plus.circle.fill", title: "Log Drive", color: .green, action: {})
-                ActionButton(icon: "book.fill", title: "Study Guide", color: .blue, action: {})
-                ActionButton(icon: "list.star", title: "My Stats", color: .yellow, action: {})
-                ActionButton(icon: "calendar", title: "Schedule", color: .orange, action: {})
-            }
-            .padding(.horizontal)
-        }
-    }
-}
-
-struct RecentDrivesSectionView: View {
+struct StudentRecentDrivesView: View {
     let driveHistory: [DriveHistory]
     @State private var selectedDrive: DriveHistory?
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Recent Drives")
+            Text("My Recent Drives")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
@@ -231,7 +197,7 @@ struct RecentDrivesSectionView: View {
                     .cornerRadius(12)
             } else {
                 VStack(spacing: 12) {
-                    ForEach(driveHistory) { drive in
+                    ForEach(driveHistory.prefix(4)) { drive in
                         Button(action: { selectedDrive = drive }) {
                             DriveHistoryRow(date: drive.date, distance: drive.distance, score: drive.score)
                         }
