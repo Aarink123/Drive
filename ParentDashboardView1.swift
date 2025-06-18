@@ -986,4 +986,5 @@ struct DriveMetrics {
     let speedingInstances: Int
     let safetyRating: SafetyRating
     let driveDuration: Int
+    let totalHoursDriven: Double
 }

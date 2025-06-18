@@ -1,11 +1,3 @@
-//
-//  SettingsView.swift
-//  DriveQuest
-//
-//  Created by Aarin Karamchandani on 6/17/25.
-//
-
-
 import SwiftUI
 
 struct SettingsView: View {
@@ -233,6 +225,13 @@ struct SettingsView: View {
     }
 }
 
+struct DriveHistory: Identifiable {
+    let id = UUID()
+    let date: String
+    let distance: Double
+    let score: Int
+}
+
 struct Kid: Identifiable {
     let id: UUID
     let name: String
@@ -243,13 +242,14 @@ struct Kid: Identifiable {
     let recentDriveScore: Int
     let weekScore: Int
     let monthScore: Int
+    let driveHistory: [DriveHistory]
 }
 
 struct AddKidFormView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var name = ""
     @State private var age = ""
-    @State private var selectedState = "Alabama"
+    @State private var selectedState = "Georgia"
     @State private var expectedTestDate = Date()
     @State private var includeTestDate = false
     
@@ -311,11 +311,13 @@ struct AddKidFormView: View {
                                 rapidAcceleration: 0,
                                 speedingInstances: 0,
                                 safetyRating: .safe,
-                                driveDuration: 0
+                                driveDuration: 0,
+                                totalHoursDriven: 0.0
                             ),
                             recentDriveScore: 0,
                             weekScore: 0,
-                            monthScore: 0
+                            monthScore: 0,
+                            driveHistory: []
                         )
                         onSubmit(newKid)
                         presentationMode.wrappedValue.dismiss()
