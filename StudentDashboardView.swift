@@ -10,6 +10,8 @@ struct StudentDashboardView: View {
     private let secondaryBlue = Color(#colorLiteral(red: 0.1568627451, green: 0.4, blue: 0.6156862745, alpha: 1))
     
     private var student: Kid? {
+        // In a real app, this would use a logged-in user ID.
+        // For this demo, we'll keep finding "Aarin".
         appData.kids.first { $0.name == "Aarin" } ?? appData.kids.first
     }
 
@@ -33,6 +35,10 @@ struct StudentDashboardView: View {
                                 totalRequiredHours: 40.0
                             )
                             .padding(.horizontal)
+                            
+                            // NEW: Recommendations Section
+                            StudentRecommendationsView(student: student)
+                                .padding(.horizontal)
                                                         
                             WeeklyGoalsSectionView()
                                 .padding(.horizontal)
@@ -175,6 +181,71 @@ struct DrivingProgressView: View {
         .cornerRadius(20)
     }
 }
+
+// MARK: - NEW Student Recommendations View
+struct StudentRecommendationsView: View {
+    let student: Kid
+    
+    private var parentRecommendedCourses: [Course] {
+        Course.allCourses.filter { student.parentRecommendedCourseIDs.contains($0.id) }
+    }
+    
+    private var aiRecommendedCourses: [Course] {
+        Course.allCourses.filter { student.aiRecommendedCourseIDs.contains($0.id) }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Parent Recommendations
+            if !parentRecommendedCourses.isEmpty {
+                RecommendationCarouselView(
+                    title: "Recommended by Your Parent",
+                    icon: "person.wave.2.fill",
+                    courses: parentRecommendedCourses
+                )
+            }
+            
+            // AI Recommendations
+            if !aiRecommendedCourses.isEmpty {
+                RecommendationCarouselView(
+                    title: "Recommended For You",
+                    icon: "wand.and.stars",
+                    courses: aiRecommendedCourses
+                )
+            }
+        }
+    }
+}
+
+struct RecommendationCarouselView: View {
+    let title: String
+    let icon: String
+    let courses: [Course]
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(.yellow)
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+            }
+            .padding(.bottom, 8)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(courses) { course in
+                        CourseCard(course: course)
+                            .frame(width: 180)
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 struct StudentRecentDrivesView: View {
     let driveHistory: [DriveHistory]

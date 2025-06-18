@@ -50,6 +50,12 @@ enum CourseCategory: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
 }
 
+// Defines the role of the user to conditionally show UI elements
+enum UserRole {
+    case parent, student
+}
+
+
 // Preview Provider for Xcode Previews
 struct ParentDashboardView_Previews: PreviewProvider {
     static var previews: some View {
@@ -97,6 +103,10 @@ struct ParentDashboardView1: View {
                                 onShowHistory: { showDriveHistory = true }
                             )
                             
+                            // NEW: AI Recommended Courses Section
+                            AIRecommendedCoursesView(student: currentStudent)
+                                .padding(.horizontal)
+                            
                             WeeklyGoalsSectionView()
                                 .padding(.horizontal)
                             
@@ -123,7 +133,8 @@ struct ParentDashboardView1: View {
                 }
             }
             .sheet(isPresented: $showCourses) {
-                CoursesView()
+                // Pass the parent role and selected student to the CoursesView
+                CoursesView(userRole: .parent, selectedStudentIndex: selectedStudent)
             }
             .sheet(isPresented: $showDriveHistory) {
                 if !appData.kids.isEmpty {
@@ -314,6 +325,51 @@ struct ActionButton: View {
         }
     }
 }
+
+// MARK: - NEW AI Recommended Courses View
+struct AIRecommendedCoursesView: View {
+    let student: Kid
+    
+    private var recommendedCourses: [Course] {
+        Course.allCourses.filter { course in
+            student.aiRecommendedCourseIDs.contains(course.id)
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack {
+                Image(systemName: "wand.and.stars")
+                    .foregroundColor(.yellow)
+                Text("Recommended For \(student.name)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+            }
+            .padding(.bottom, 8)
+            
+            if recommendedCourses.isEmpty {
+                Text("No specific recommendations at this time. Great job!")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(12)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        ForEach(recommendedCourses) { course in
+                            CourseCard(course: course)
+                                .frame(width: 180)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 // MARK: - Weekly Goals Section with new functionality
 
@@ -604,12 +660,17 @@ struct DriveHistoryRow: View {
     }
 }
 
-// MARK: - Courses Section
+// MARK: - Courses Section (MODIFIED)
 struct CoursesView: View {
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var appData: AppData
     @State private var selectedCourse: Course?
     @State private var searchText = ""
     @State private var selectedCategory: CourseCategory = .all
+    
+    // Properties to handle different user roles
+    let userRole: UserRole
+    let selectedStudentIndex: Int?
     
     let courses: [Course] = Course.allCourses
     
@@ -659,9 +720,14 @@ struct CoursesView: View {
                                 let featured = courses.first!
                                 Text("Featured Course")
                                     .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
-                                CourseCard(course: featured)
-                                    .onTapGesture { selectedCourse = featured }
-                                    .padding(.horizontal)
+                                
+                                CourseTileView(
+                                    course: featured,
+                                    userRole: userRole,
+                                    selectedStudentIndex: selectedStudentIndex,
+                                    onTap: { selectedCourse = featured }
+                                )
+                                .padding(.horizontal)
                             }
 
                             Text(selectedCategory.rawValue)
@@ -674,8 +740,12 @@ struct CoursesView: View {
                             } else {
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 20) {
                                     ForEach(filteredCourses) { course in
-                                        CourseCard(course: course)
-                                            .onTapGesture { selectedCourse = course }
+                                        CourseTileView(
+                                            course: course,
+                                            userRole: userRole,
+                                            selectedStudentIndex: selectedStudentIndex,
+                                            onTap: { selectedCourse = course }
+                                        )
                                     }
                                 }.padding(.horizontal)
                             }
@@ -690,6 +760,68 @@ struct CoursesView: View {
                 CourseContentView(course: course)
             }
         }
+    }
+}
+
+// NEW View to wrap CourseCard and add Recommend button
+struct CourseTileView: View {
+    @EnvironmentObject var appData: AppData
+    
+    let course: Course
+    let userRole: UserRole
+    let selectedStudentIndex: Int?
+    let onTap: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            CourseCard(course: course)
+                .onTapGesture(perform: onTap)
+            
+            if userRole == .parent, let studentIndex = selectedStudentIndex {
+                let student = appData.kids[studentIndex]
+                let isRecommended = student.parentRecommendedCourseIDs.contains(course.id)
+                
+                Button(action: {
+                    // This is where we will modify the appData
+                    withAnimation {
+                        if isRecommended {
+                            appData.kids[studentIndex].parentRecommendedCourseIDs.removeAll { $0 == course.id }
+                        } else {
+                            appData.kids[studentIndex].parentRecommendedCourseIDs.append(course.id)
+                        }
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: isRecommended ? "checkmark.circle.fill" : "star.circle")
+                        Text(isRecommended ? "Recommended" : "Recommend")
+                    }
+                    .font(.caption.bold())
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(isRecommended ? Color.green : Color.blue)
+                    .foregroundColor(.white)
+                }
+                .padding(.top, 4)
+                .background(.ultraThinMaterial) // Match the card background
+                .cornerRadius(20, corners: [.bottomLeft, .bottomRight])
+            }
+        }
+    }
+}
+
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape( RoundedCorner(radius: radius, corners: corners) )
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
+        return Path(path.cgPath)
     }
 }
 

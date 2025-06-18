@@ -244,4 +244,27 @@ class AppData: ObservableObject {
             ]
         )
     ]
+
+    init() {
+        addInitialRecommendations()
+    }
+
+    private func addInitialRecommendations() {
+        guard let aarinIndex = kids.firstIndex(where: { $0.name == "Aarin" }) else { return }
+
+        // AI Recommendations (based on Aarin's metrics like speeding and hard braking)
+        let defensiveDrivingCourseID = Course.allCourses.first { $0.title == "Defensive Driving" }?.id
+        let highwaySkillsCourseID = Course.allCourses.first { $0.title == "Highway Skills" }?.id
+        
+        var aiRecommended: [UUID] = []
+        if let id = defensiveDrivingCourseID { aiRecommended.append(id) }
+        if let id = highwaySkillsCourseID { aiRecommended.append(id) }
+        kids[aarinIndex].aiRecommendedCourseIDs = aiRecommended
+
+        // Parent Recommendations (a manual choice by the parent)
+        let parkingProCourseID = Course.allCourses.first { $0.title == "Parking Pro" }?.id
+        var parentRecommended: [UUID] = []
+        if let id = parkingProCourseID { parentRecommended.append(id) }
+        kids[aarinIndex].parentRecommendedCourseIDs = parentRecommended
+    }
 }

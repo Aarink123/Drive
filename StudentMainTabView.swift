@@ -39,7 +39,8 @@ struct StudentMainTabView: View {
                 }
             
             // Courses Tab
-            CoursesView()
+            // MODIFIED: Pass the student role. Index is not needed for students.
+            CoursesView(userRole: .student, selectedStudentIndex: nil)
                 .tabItem {
                     Image(systemName: "book.fill")
                     Text("Courses")

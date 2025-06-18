@@ -254,15 +254,19 @@ struct DriveHistory: Identifiable, Hashable {
 
 struct Kid: Identifiable {
     let id: UUID
-    let name: String
-    let age: String
-    let state: String
-    let expectedTestDate: Date?
-    let metrics: DriveMetrics
-    let recentDriveScore: Int
-    let weekScore: Int
-    let monthScore: Int
-    let driveHistory: [DriveHistory]
+    var name: String // Made vars to allow modification
+    var age: String
+    var state: String
+    var expectedTestDate: Date?
+    var metrics: DriveMetrics
+    var recentDriveScore: Int
+    var weekScore: Int
+    var monthScore: Int
+    var driveHistory: [DriveHistory]
+    
+    // ADDED these properties to fix the error
+    var parentRecommendedCourseIDs: [UUID] = []
+    var aiRecommendedCourseIDs: [UUID] = []
 }
 
 struct AddKidFormView: View {
@@ -337,7 +341,10 @@ struct AddKidFormView: View {
                             recentDriveScore: 0,
                             weekScore: 0,
                             monthScore: 0,
-                            driveHistory: []
+                            driveHistory: [],
+                            // New kids will have empty recommendations by default
+                            parentRecommendedCourseIDs: [],
+                            aiRecommendedCourseIDs: []
                         )
                         onSubmit(newKid)
                         presentationMode.wrappedValue.dismiss()
