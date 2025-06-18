@@ -9,10 +9,11 @@ struct StudentDashboardView: View {
     private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
     private let secondaryBlue = Color(#colorLiteral(red: 0.1568627451, green: 0.4, blue: 0.6156862745, alpha: 1))
     
-    private var student: Kid? {
+    // MODIFIED: Find the student's index to create a binding
+    private var studentIndex: Int? {
         // In a real app, this would use a logged-in user ID.
         // For this demo, we'll keep finding "Aarin".
-        appData.kids.first { $0.name == "Aarin" } ?? appData.kids.first
+        appData.kids.firstIndex { $0.name == "Aarin" } ?? (appData.kids.isEmpty ? nil : 0)
     }
 
     var body: some View {
@@ -21,7 +22,9 @@ struct StudentDashboardView: View {
                 LinearGradient(gradient: Gradient(colors: [deepBlue, secondaryBlue]), startPoint: .top, endPoint: .bottom)
                     .edgesIgnoringSafeArea(.all)
 
-                if let student = student {
+                // MODIFIED: Use the studentIndex to ensure we have a valid user
+                if let studentIndex = studentIndex {
+                    let student = appData.kids[studentIndex]
                     ScrollView {
                         VStack(spacing: 24) {
                             StudentHeaderView(username: student.name)
@@ -36,11 +39,11 @@ struct StudentDashboardView: View {
                             )
                             .padding(.horizontal)
                             
-                            // NEW: Recommendations Section
                             StudentRecommendationsView(student: student)
                                 .padding(.horizontal)
                                                         
-                            WeeklyGoalsSectionView()
+                            // MODIFIED: Pass a binding to the student's goals
+                            WeeklyGoalsSectionView(goals: $appData.kids[studentIndex].goals)
                                 .padding(.horizontal)
                             
                             StudentRecentDrivesView(driveHistory: student.driveHistory)

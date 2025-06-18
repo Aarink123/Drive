@@ -1,5 +1,61 @@
 import SwiftUI
 
+// MARK: - Data Models for New Features
+struct Goal: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let description: String
+    var detailedTip: String
+    var whyItMatters: String
+    var progress: Int
+    let target: Int
+    let color: Color
+    // Mock data for the new history chart
+    let practiceHistory: [Int] = (0..<7).map { _ in Int.random(in: 0...5) }
+}
+
+struct ModuleContent: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let type: String // e.g., "Video" or "Reading"
+}
+
+struct Module: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let content: [ModuleContent]
+    let quiz: Quiz?
+}
+
+struct QuizQuestion: Identifiable, Hashable {
+    let id = UUID()
+    let text: String
+    let answers: [String]
+    let correctAnswer: Int // Index of the correct answer
+    let explanation: String
+}
+
+struct Quiz: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    var questions: [QuizQuestion]
+}
+
+enum CourseCategory: String, CaseIterable, Identifiable {
+    case all = "All"
+    case core = "Core Skills"
+    case advanced = "Advanced"
+    case situational = "Situational"
+    
+    var id: String { self.rawValue }
+}
+
+// Defines the role of the user to conditionally show UI elements
+enum UserRole {
+    case parent, student
+}
+
+
 struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var appData: AppData
@@ -263,7 +319,8 @@ struct Kid: Identifiable {
     var weekScore: Int
     var monthScore: Int
     var driveHistory: [DriveHistory]
-    
+    var goals: [Goal] // MODIFIED: Added goals property
+
     // ADDED these properties to fix the error
     var parentRecommendedCourseIDs: [UUID] = []
     var aiRecommendedCourseIDs: [UUID] = []
@@ -342,6 +399,7 @@ struct AddKidFormView: View {
                             weekScore: 0,
                             monthScore: 0,
                             driveHistory: [],
+                            goals: [], // MODIFIED: New kids have empty goals
                             // New kids will have empty recommendations by default
                             parentRecommendedCourseIDs: [],
                             aiRecommendedCourseIDs: []
