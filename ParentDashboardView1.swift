@@ -11,6 +11,18 @@ struct Goal: Identifiable, Hashable {
     let color: Color
 }
 
+struct ModuleContent: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let type: String // e.g., "Video" or "Reading"
+}
+
+struct Module: Identifiable, Hashable {
+    let id = UUID()
+    let title: String
+    let content: [ModuleContent]
+}
+
 struct QuizQuestion: Identifiable, Hashable {
     let id = UUID()
     let text: String
@@ -23,6 +35,15 @@ struct Quiz: Identifiable, Hashable {
     let id = UUID()
     let title: String
     var questions: [QuizQuestion]
+}
+
+enum CourseCategory: String, CaseIterable, Identifiable {
+    case all = "All"
+    case core = "Core Skills"
+    case advanced = "Advanced"
+    case situational = "Situational"
+    
+    var id: String { self.rawValue }
 }
 
 // Preview Provider for Xcode Previews
@@ -479,126 +500,300 @@ struct DriveHistoryRow: View {
     }
 }
 
-// MARK: - Courses Section with Quiz Functionality
+// MARK: - Courses Section with Combined Module and Quiz Functionality
 
 struct CoursesView: View {
     @Environment(\.dismiss) var dismiss
     @State private var selectedCourse: Course?
-
-    // Expanded list of courses with quiz data
+    @State private var searchText = ""
+    @State private var selectedCategory: CourseCategory = .all
+    
     let courses: [Course] = [
-        Course(title: "Defensive Driving", description: "Anticipate and avoid hazards", duration: "5 Questions", icon: "shield.checkered", color: .green, quiz: .defensiveDrivingQuiz),
-        Course(title: "Night Driving", description: "Master driving in low light", duration: "4 Questions", icon: "moon.stars.fill", color: .purple, quiz: .nightDrivingQuiz),
-        Course(title: "Highway Skills", description: "Merging, lane changes, and more", duration: "4 Questions", icon: "road.lanes", color: .blue, quiz: .highwaySkillsQuiz),
-        Course(title: "City Driving", description: "Navigate dense urban environments", duration: "1.5 hours", icon: "building.2.fill", color: .pink, quiz: nil),
-        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", duration: "1 hour", icon: "parkingsign.circle.fill", color: .orange, quiz: nil),
-        Course(title: "Inclement Weather", description: "Driving in rain, fog, and snow", duration: "2.5 hours", icon: "cloud.rain.fill", color: .gray, quiz: nil)
+        Course(title: "Defensive Driving", description: "Anticipate and avoid hazards", icon: "shield.checkered", color: .green, category: .core, imageName: "shield.lefthalf.filled", modules: [
+            .init(title: "Module 1: Core Principles", content: [ .init(title: "The SIPDE System", type: "Video"), .init(title: "Identifying Escape Routes", type: "Reading") ]),
+            .init(title: "Module 2: Advanced Techniques", content: [ .init(title: "Mastering Following Distance", type: "Video"), .init(title: "Handling Tailgaters Safely", type: "Video") ])
+        ], quiz: .defensiveDrivingQuiz),
+        Course(title: "Night Driving", description: "Master driving in low light", icon: "moon.stars.fill", color: .purple, category: .situational, imageName: "moon.stars.fill", modules: [
+            .init(title: "Module 1: Seeing and Being Seen", content: [ .init(title: "Using Your Headlights Correctly", type: "Video"), .init(title: "How to Handle Glare", type: "Reading") ])
+        ], quiz: .nightDrivingQuiz),
+        Course(title: "Highway Skills", description: "Merging, lane changes, and more", icon: "road.lanes", color: .blue, category: .advanced, imageName: "road.lanes", modules: [
+            .init(title: "Module 1: On-Ramps and Off-Ramps", content: [ .init(title: "Merging and Exiting at Speed", type: "Video") ]),
+            .init(title: "Module 2: Lane Discipline", content: [ .init(title: "Blind Spot Checks", type: "Video"), .init(title: "Understanding Highway Hypnosis", type: "Reading") ])
+        ], quiz: .highwaySkillsQuiz),
+        Course(title: "City Driving", description: "Navigate dense urban environments", icon: "building.2.fill", color: .pink, category: .situational, imageName: "building.columns.fill", modules: [], quiz: nil),
+        Course(title: "Parking Pro", description: "Parallel, angled, and lot parking", icon: "parkingsign.circle.fill", color: .orange, category: .advanced, imageName: "parkingsign.circle.fill", modules: [], quiz: nil),
+        Course(title: "Inclement Weather", description: "Driving in rain, fog, and snow", icon: "cloud.rain.fill", color: .gray, category: .situational, imageName: "cloud.sleet.fill", modules: [], quiz: nil)
     ]
     
+    var filteredCourses: [Course] {
+        let categoryFiltered = (selectedCategory == .all) ? courses : courses.filter { $0.category == selectedCategory }
+        if searchText.isEmpty {
+            return categoryFiltered
+        } else {
+            return categoryFiltered.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
                 Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1)).edgesIgnoringSafeArea(.all)
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Driving Courses")
-                                .font(.largeTitle).fontWeight(.bold)
-                                .foregroundColor(.white)
-                            Text("Unlock new skills and improve safety")
-                                .font(.headline)
-                                .foregroundColor(.white.opacity(0.8))
-                        }.padding([.horizontal, .top])
-
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: 20) {
-                            ForEach(courses) { course in
-                                CourseCard(course: course)
-                                    .onTapGesture {
-                                        if course.quiz != nil {
-                                            selectedCourse = course
-                                        }
-                                    }
+                
+                VStack(spacing: 0) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Driving Courses")
+                            .font(.largeTitle).fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("Unlock new skills and improve safety")
+                            .font(.headline)
+                            .foregroundColor(.white.opacity(0.8))
+                    }.padding([.horizontal, .top])
+                    
+                    // Category Filters
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack {
+                            ForEach(CourseCategory.allCases) { category in
+                                Button(action: { selectedCategory = category }) {
+                                    Text(category.rawValue)
+                                        .font(.subheadline).bold()
+                                        .foregroundColor(selectedCategory == category ? .black : .white)
+                                        .padding(.horizontal, 16).padding(.vertical, 8)
+                                        .background(selectedCategory == category ? .yellow : Color.white.opacity(0.1))
+                                        .cornerRadius(16)
+                                }
                             }
-                        }.padding(.horizontal)
+                        }
+                        .padding()
                     }
-                    .padding(.bottom)
+                    
+                    // Main Content Grid
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            if let featured = courses.first {
+                                Text("Featured Course")
+                                    .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
+                                CourseCard(course: featured)
+                                    .onTapGesture { selectedCourse = featured }
+                                    .padding(.horizontal)
+                            }
+
+                            Text(selectedCategory.rawValue)
+                                .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160))], spacing: 20) {
+                                ForEach(filteredCourses) { course in
+                                    CourseCard(course: course)
+                                        .onTapGesture { selectedCourse = course }
+                                }
+                            }.padding(.horizontal)
+                        }
+                        .padding(.bottom)
+                    }
                 }
             }
-            .navigationBarItems(trailing: Button("Done") {
-                dismiss()
-            }.foregroundColor(.white))
             .navigationBarHidden(true)
+            .searchable(text: $searchText, prompt: "Search for a course")
             .sheet(item: $selectedCourse) { course in
-                if let quiz = course.quiz {
-                    QuizView(quiz: quiz)
-                }
+                CourseContentView(course: course)
             }
         }
     }
 }
 
+
 struct Course: Identifiable, Hashable {
     let id = UUID()
     let title: String
     let description: String
-    let duration: String
     let icon: String
     let color: Color
+    let category: CourseCategory
+    let imageName: String
+    let modules: [Module]
     let quiz: Quiz?
+    
+    var duration: String {
+        if let quiz = quiz, !quiz.questions.isEmpty {
+            return "\(quiz.questions.count) Questions"
+        } else if !modules.isEmpty {
+            return "\(modules.count) Modules"
+        } else {
+            return "Coming Soon"
+        }
+    }
 }
 
 struct CourseCard: View {
     let course: Course
     
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            course.color
-                .brightness(-0.2)
-
-            LinearGradient(
-                gradient: Gradient(colors: [.black.opacity(0.8), .clear]),
-                startPoint: .bottom,
-                endPoint: .center
-            )
+        VStack(alignment: .leading, spacing: 8) {
+            // Header
+            ZStack(alignment: .topTrailing) {
+                course.color
+                Image(systemName: course.icon)
+                    .font(.system(size: 60))
+                    .foregroundColor(.white.opacity(0.2))
+                    .offset(x: 20, y: -10)
+            }
+            .frame(height: 100)
             
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Image(systemName: course.icon)
-                        .font(.title)
-                        .foregroundColor(course.color)
-                    Spacer()
-                    Text(course.duration)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .padding(8)
-                        .background(Color.white.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-                
-                Spacer()
-                
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
                 Text(course.title)
-                    .font(.title2)
+                    .font(.headline)
                     .fontWeight(.bold)
                 
                 Text(course.description)
-                    .font(.subheadline)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                
+                Spacer()
+                
+                Text(course.duration)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(course.color)
             }
-            .foregroundColor(.white)
-            .padding(20)
+            .padding([.horizontal, .bottom], 12)
         }
-        .frame(height: 200)
+        .background(.ultraThinMaterial)
         .cornerRadius(20)
-        .overlay(
-            course.quiz == nil ?
-            Color.black.opacity(0.4).cornerRadius(20) : nil
-        )
-        .overlay(
-            course.quiz == nil ?
-            Text("Coming Soon").foregroundColor(.white).fontWeight(.bold) : nil
-        )
     }
 }
+
+struct CourseContentView: View {
+    let course: Course
+    @Environment(\.dismiss) var dismiss
+    @State private var showQuiz = false
+    
+    private let deepBlue = Color(#colorLiteral(red: 0.09019608051, green: 0.3019607961, blue: 0.5215686559, alpha: 1))
+    
+    var body: some View {
+        ZStack {
+            deepBlue.edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header with Image
+                ZStack {
+                    Image(systemName: course.imageName)
+                        .font(.system(size: 150))
+                        .foregroundColor(course.color.opacity(0.3))
+                        .offset(y: -20)
+                    
+                    Rectangle()
+                        .fill(LinearGradient(colors: [.clear, deepBlue], startPoint: .top, endPoint: .bottom))
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Spacer()
+                        Text(course.title)
+                            .font(.largeTitle).bold()
+                        Text(course.description)
+                            .font(.headline)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding()
+                }
+                .frame(height: 200)
+                
+                // Content
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Modules Section
+                        ForEach(course.modules) { module in
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(module.title)
+                                    .font(.title2).bold()
+                                    .padding(.top)
+                                
+                                ForEach(module.content) { content in
+                                    ModuleContentRow(content: content)
+                                }
+                            }
+                        }
+                        
+                        Spacer(minLength: 20)
+                        
+                        // Quiz Button
+                        if let quiz = course.quiz {
+                            Button(action: { showQuiz = true }) {
+                                HStack {
+                                    Spacer()
+                                    Text("Take the Course Quiz")
+                                    Image(systemName: "arrow.right.circle.fill")
+                                    Spacer()
+                                }
+                                .font(.headline).bold()
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.green)
+                                .cornerRadius(12)
+                            }
+                            .sheet(isPresented: $showQuiz) {
+                                QuizView(quiz: quiz)
+                            }
+                        } else {
+                            Text("Quiz Coming Soon")
+                                .font(.headline).bold()
+                                .foregroundColor(.white.opacity(0.5))
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.white.opacity(0.1))
+                                .cornerRadius(12)
+                        }
+                    }
+                    .padding()
+                }
+            }
+            .foregroundColor(.white)
+            .edgesIgnoringSafeArea(.top)
+        }
+    }
+}
+
+struct ModuleContentRow: View {
+    let content: ModuleContent
+    @State private var showAlert = false
+
+    var icon: String {
+        switch content.type {
+        case "Video": return "play.rectangle.fill"
+        case "Reading": return "book.fill"
+        default: return "questionmark.diamond.fill"
+        }
+    }
+    
+    var body: some View {
+        Button(action: { showAlert = true }) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(.accentColor)
+                    .frame(width: 30)
+                
+                Text(content.title)
+                    .font(.headline)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            .padding()
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(12)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .alert("Content not available", isPresented: $showAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("This feature is not yet implemented.")
+        }
+    }
+}
+
 
 struct QuizView: View {
     @State var quiz: Quiz
@@ -775,7 +970,7 @@ struct QuizResultView: View {
 }
 
 
-// MARK: - Views that were missing are now re-added
+// MARK: - ENHANCED AI Recommendations View
 
 struct AIDetailedRecommendationsView: View {
     let student: Kid
@@ -788,105 +983,144 @@ struct AIDetailedRecommendationsView: View {
             ZStack {
                 deepBlue.edgesIgnoringSafeArea(.all)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 30) {
-                        VStack(alignment: .leading, spacing: 8) {
+                    VStack(spacing: 30) {
+                        VStack(spacing: 4) {
                             Text("AI-Powered Insights")
                                 .font(.largeTitle).fontWeight(.bold)
-                                .foregroundColor(.white)
-                            Text("Hyper-Detailed Analysis for \(student.name)")
-                                .font(.headline)
+                            Text("Analysis for \(student.name)")
+                                .font(.headline).fontWeight(.medium)
                                 .foregroundColor(.white.opacity(0.8))
-                        }.padding([.horizontal, .top])
+                        }
+                        .foregroundColor(.white)
+                        .padding(.top)
+
+                        // AI Summary Text Block
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "brain.head.profile")
+                                    .font(.title2)
+                                Text("AI Summary")
+                                    .font(.title2).bold()
+                            }
+                            .foregroundColor(.yellow)
+                            
+                            Text("Overall, **\(student.name)** is demonstrating solid progress and a commitment to safe driving, reflected in a strong 'Control' score of **\(student.driveHistory.first?.performanceBreakdown.control ?? 0)**. Their ability to manage following distance is also a key strength.")
+                                .padding(.bottom, 4)
+                            
+                            Text("The primary area for improvement is **Speed Management**, which is currently the lowest-scoring performance metric. The data indicates that most speeding instances occur on the highway bypass during afternoon hours. Additionally, we've noted **\(student.metrics.hardBraking) hard braking events** this week, which often happen in stop-and-go traffic during the morning rush hour. Focusing on smoother braking and better speed awareness will significantly boost the overall safety rating.")
+                        }
+                        .font(.body)
+                        .padding()
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(16)
+                        .padding(.horizontal)
+
+                        if let breakdown = student.driveHistory.first?.performanceBreakdown {
+                            PerformanceBreakdownView(breakdown: breakdown)
+                                .padding(.horizontal)
+                        }
                         
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading) {
+                            Text("Key Insights")
+                                .font(.title2).bold().foregroundColor(.white).padding(.horizontal)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    InsightPillView(icon: "clock.arrow.circlepath", text: "Most incidents occur during morning rush hour (7-8 AM).")
+                                    InsightPillView(icon: "mappin.and.ellipse", text: "Speeding is most common on the highway bypass.")
+                                    InsightPillView(icon: "car.2.fill", text: "Hard braking often follows periods of tailgating.")
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Key Focus Areas")
-                                .font(.title2).fontWeight(.bold).foregroundColor(.white)
-                            FocusAreaCard(icon: "exclamationmark.triangle.fill", title: "Hard Braking", value: "\(student.metrics.hardBraking) events", recommendation: "Increase following distance, especially in stop-and-go traffic. Aim for smoother, more gradual braking.", color: .red)
-                            FocusAreaCard(icon: "forward.fill", title: "Rapid Acceleration", value: "\(student.metrics.rapidAcceleration) events", recommendation: "Apply gentle pressure to the accelerator. Smooth starts from a stoplight improve control and save fuel.", color: .orange)
-                            FocusAreaCard(icon: "speedometer", title: "Speeding", value: "\(student.metrics.speedingInstances) events", recommendation: "Use GPS to stay aware of speed limits. A crucial step for safety and avoiding tickets.", color: .purple)
-                        }.padding(.horizontal)
-
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("AI Pattern Analysis")
-                                .font(.title2).fontWeight(.bold).foregroundColor(.white)
-                            InsightCard(icon: "mappin.and.ellipse", title: "Location Habits", text: "AI has noticed that most speeding instances occur on the main highway bypass. Suggest reviewing the speed limits in that specific zone.")
-                            InsightCard(icon: "clock.arrow.circlepath", title: "Time-of-Day Patterns", text: "Hard braking events are more frequent during the morning commute (7-8 AM). This may be due to rushing or heavier traffic.")
-                        }.padding(.horizontal)
-                        
-                        SafetyRatingCard(rating: student.metrics.safetyRating)
-                            .padding(.horizontal)
-
+                                .font(.title2).bold().foregroundColor(.white)
+                            
+                            FocusAreaRowView(icon: "exclamationmark.triangle.fill", title: "Hard Braking", value: "\(student.metrics.hardBraking) events", trend: "+15%", trendColor: .red, recommendation: "Increase following distance for smoother stops.")
+                            FocusAreaRowView(icon: "arrow.up.right", title: "Rapid Acceleration", value: "\(student.metrics.rapidAcceleration) events", trend: "-10%", trendColor: .green, recommendation: "Apply gentle, steady pressure to the accelerator.")
+                            FocusAreaRowView(icon: "speedometer", title: "Speeding", value: "\(student.metrics.speedingInstances) instance", trend: "+5%", trendColor: .red, recommendation: "Stay aware of posted speed limits, especially in school zones.")
+                        }
+                        .padding(.horizontal)
                     }
-                    .padding(.vertical)
+                    .padding(.bottom)
                 }
             }
-            .navigationBarItems(trailing: Button("Done") {
-                presentationMode.wrappedValue.dismiss()
-            }.foregroundColor(.white))
             .navigationBarHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+            }
         }
     }
 }
 
-struct FocusAreaCard: View {
+struct InsightPillView: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.headline)
+                .foregroundColor(.yellow)
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.white.opacity(0.15))
+        .cornerRadius(20)
+    }
+}
+
+struct FocusAreaRowView: View {
     let icon: String
     let title: String
     let value: String
+    let trend: String
+    let trendColor: Color
     let recommendation: String
-    let color: Color
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.largeTitle)
-                .foregroundColor(color)
-                .frame(width: 50)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                Text(value)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundColor(color)
-                Text(recommendation)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.top, 4)
-            }
-        }
-        .padding()
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
-    }
-}
-
-struct InsightCard: View {
-    let icon: String
-    let title: String
-    let text: String
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: icon)
-                    .font(.headline)
-                    .foregroundColor(.cyan)
+                    .font(.title2)
+                    .foregroundColor(.orange)
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .font(.headline).bold()
+                Spacer()
+                Text(value)
+                    .font(.headline).bold()
+                HStack(spacing: 2) {
+                    Image(systemName: trend.contains("+") ? "arrow.up.right" : "arrow.down.right")
+                    Text(trend)
+                }
+                .font(.caption.bold())
+                .foregroundColor(trendColor)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(trendColor.opacity(0.2))
+                .cornerRadius(8)
             }
-            Text(text)
+            Text(recommendation)
                 .font(.caption)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.white.opacity(0.7))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color.white.opacity(0.1))
         .cornerRadius(12)
     }
 }
+
+
+// MARK: - Other Unchanged Views
 
 struct DriveHistoryMasterView: View {
     let driveHistory: [DriveHistory]
@@ -989,7 +1223,6 @@ struct DetailedMetricsView: View {
                             .padding(.horizontal)
                         }
                         
-                        // Newly Added Analysis Sections
                         if let recentDrive = student.driveHistory.first {
                             VStack(spacing: 20) {
                                 PerformanceBreakdownView(breakdown: recentDrive.performanceBreakdown)
