@@ -1,11 +1,3 @@
-//
-//  DriveDetailView 2.swift
-//  DriveQuest
-//
-//  Created by Aarin Karamchandani on 6/17/25.
-//
-
-
 import SwiftUI
 
 struct DriveDetailView: View {
@@ -25,7 +17,7 @@ struct DriveDetailView: View {
                     VStack {
                         Text("Drive Analysis")
                             .font(.largeTitle).fontWeight(.bold)
-                        Text("Most Recent Drive: \(drive.date)")
+                        Text("Drive on: \(drive.date)")
                             .font(.subheadline)
                     }
                     .foregroundColor(.white)
@@ -36,10 +28,10 @@ struct DriveDetailView: View {
                     // Key Safety Events (Placeholder data)
                     KeySafetyEventsView()
                     
-                    // Performance Breakdown
+                    // Performance Breakdown from shared component
                     PerformanceBreakdownView(breakdown: drive.performanceBreakdown)
                     
-                    // Maneuver Analysis
+                    // Maneuver Analysis from shared component
                     ManeuverAnalysisListView(analyses: drive.maneuverAnalyses)
                     
                 }
@@ -50,7 +42,7 @@ struct DriveDetailView: View {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.gray.opacity(0.8))
             }
             .padding()
         }
@@ -127,110 +119,6 @@ struct SafetyEventCard: View {
         }
         .foregroundColor(.white)
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(16)
-    }
-}
-
-struct PerformanceBreakdownView: View {
-    let breakdown: PerformanceBreakdown
-    @State private var animate = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Performance Breakdown")
-                .font(.title2).fontWeight(.bold).foregroundColor(.white)
-            
-            HStack(alignment: .bottom, spacing: 12) {
-                BarView(value: breakdown.control, label: "Control", color: .green, animate: animate)
-                BarView(value: breakdown.speed, label: "Speed", color: .orange, animate: animate)
-                BarView(value: breakdown.aware, label: "Aware", color: .blue, animate: animate)
-                BarView(value: breakdown.follow, label: "Follow", color: .cyan, animate: animate)
-                BarView(value: breakdown.smooth, label: "Smooth", color: .red, animate: animate)
-            }
-            .frame(height: 200)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 1.0)) {
-                    animate = true
-                }
-            }
-        }
-    }
-}
-
-struct BarView: View {
-    let value: Int
-    let label: String
-    let color: Color
-    let animate: Bool
-    
-    var body: some View {
-        VStack {
-            Text("\(value)")
-                .font(.caption).fontWeight(.bold)
-                .foregroundColor(.white)
-            
-            RoundedRectangle(cornerRadius: 8)
-                .fill(color)
-                .frame(height: animate ? CGFloat(value) * 1.5 : 0)
-            
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.8))
-        }
-    }
-}
-
-struct ManeuverAnalysisListView: View {
-    let analyses: [ManeuverAnalysis]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Maneuver Analysis")
-                .font(.title2).fontWeight(.bold).foregroundColor(.white)
-            
-            ForEach(analyses) { analysis in
-                ManeuverAnalysisRow(analysis: analysis)
-            }
-        }
-    }
-}
-
-struct ManeuverAnalysisRow: View {
-    let analysis: ManeuverAnalysis
-    
-    var gradeColor: Color {
-        switch analysis.grade.prefix(1) {
-        case "A": return .green
-        case "B": return .yellow
-        case "C": return .orange
-        default: return .red
-        }
-    }
-    
-    var body: some View {
-        HStack {
-            Image(systemName: analysis.icon)
-                .font(.title2)
-                .foregroundColor(gradeColor)
-                .frame(width: 35)
-
-            VStack(alignment: .leading) {
-                Text(analysis.name)
-                    .font(.headline)
-                Text(analysis.description)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .foregroundColor(.white)
-            
-            Spacer()
-            
-            Text(analysis.grade)
-                .font(.title2).fontWeight(.bold)
-                .foregroundColor(gradeColor)
-        }
         .padding()
         .background(Color.white.opacity(0.1))
         .cornerRadius(16)

@@ -44,6 +44,25 @@ class AppData: ObservableObject {
                         ManeuverAnalysis(name: "Right Turns", icon: "arrow.turn.up.right", grade: "A", description: "Good signal usage"),
                         ManeuverAnalysis(name: "Parking", icon: "p.circle", grade: "A-", description: "Well-centered in the space")
                     ]
+                ),
+                DriveHistory(
+                    date: "June 14, 8:10 AM",
+                    distance: 15.2,
+                    score: 76,
+                    performanceBreakdown: PerformanceBreakdown(control: 80, speed: 70, aware: 81, follow: 75, smooth: 72),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Following Distance", icon: "car.2", grade: "C+", description: "Followed too closely in traffic"),
+                        ManeuverAnalysis(name: "Speeding", icon: "speedometer", grade: "C", description: "Exceeded speed limit in a school zone")
+                    ]
+                ),
+                DriveHistory(
+                    date: "June 12, 6:30 PM",
+                    distance: 22.0,
+                    score: 88,
+                    performanceBreakdown: PerformanceBreakdown(control: 91, speed: 85, aware: 90, follow: 89, smooth: 84),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Highway Merging", icon: "road.lanes.curved.right", grade: "B+", description: "Good speed matching, slightly late signal")
+                    ]
                 )
             ]
         ),
@@ -75,6 +94,24 @@ class AppData: ObservableObject {
                     maneuverAnalyses: [
                         ManeuverAnalysis(name: "Stop Signs", icon: "hand.raised", grade: "A", description: "Came to a complete stop each time"),
                         ManeuverAnalysis(name: "Following Distance", icon: "car.2", grade: "A-", description: "Maintained good distance, slightly close once")
+                    ]
+                ),
+                DriveHistory(
+                    date: "June 14, 6:00 PM",
+                    distance: 11.2,
+                    score: 90,
+                    performanceBreakdown: PerformanceBreakdown(control: 92, speed: 91, aware: 88, follow: 94, smooth: 90),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Parking", icon: "p.circle", grade: "A", description: "Excellent parallel parking maneuver")
+                    ]
+                ),
+                DriveHistory(
+                    date: "June 13, 1:20 PM",
+                    distance: 7.8,
+                    score: 88,
+                    performanceBreakdown: PerformanceBreakdown(control: 90, speed: 84, aware: 89, follow: 92, smooth: 85),
+                    maneuverAnalyses: [
+                        ManeuverAnalysis(name: "Lane Changes", icon: "arrow.left.arrow.right", grade: "B+", description: "All checks performed, slightly hesitant")
                     ]
                 )
             ]
