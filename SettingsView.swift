@@ -163,8 +163,7 @@ struct SettingsView: View {
                 }
                 
                 Section(header: Text("Preferences")) {
-                    Toggle("Enable Notifications", isOn: $notificationsEnabled)
-                    Toggle("Use Dark Mode", isOn: $darkModeEnabled)
+                    // Removed Enable Notifications and Use Dark Mode toggles
                 }
                 
                 Section {
@@ -306,6 +305,9 @@ struct DriveHistory: Identifiable, Hashable {
     let score: Int
     let performanceBreakdown: PerformanceBreakdown
     let maneuverAnalyses: [ManeuverAnalysis]
+    let hardBraking: Int
+    let rapidAcceleration: Int
+    let speedingInstances: Int
 }
 
 struct Kid: Identifiable {
