@@ -34,7 +34,7 @@ struct DriveDetailView: View {
                     ScoreRingView(score: drive.score)
                     
                     // Key Safety Events (Placeholder data)
-                    KeySafetyEventsView()
+                    KeySafetyEventsView(drive: drive)
                     
                     // Performance Breakdown
                     PerformanceBreakdownView(breakdown: drive.performanceBreakdown)
@@ -95,15 +95,17 @@ struct ScoreRingView: View {
 }
 
 struct KeySafetyEventsView: View {
+    let drive: DriveHistory
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Key Safety Events")
                 .font(.title2).fontWeight(.bold).foregroundColor(.white)
             
             HStack(spacing: 12) {
-                SafetyEventCard(icon: "exclamationmark.triangle.fill", value: "3", label: "Hard Braking", color: .red)
-                SafetyEventCard(icon: "arrow.up.right", value: "2", label: "Rapid Accel.", color: .orange)
-                SafetyEventCard(icon: "speedometer", value: "1", label: "Speeding", color: .yellow)
+                SafetyEventCard(icon: "exclamationmark.triangle.fill", value: "\(drive.hardBraking)", label: "Hard Braking", color: .red)
+                SafetyEventCard(icon: "arrow.up.right", value: "\(drive.rapidAcceleration)", label: "Rapid Accel.", color: .orange)
+                SafetyEventCard(icon: "speedometer", value: "\(drive.speedingInstances)", label: "Speeding", color: .yellow)
             }
         }
     }
